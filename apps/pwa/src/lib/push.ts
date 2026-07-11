@@ -13,7 +13,11 @@ export function usePush(device: PairedDevice | undefined) {
     if (!device) return;
     setStatus("Enabling notifications…");
     try {
-      const permission = await Notification.requestPermission();
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        setStatus("On iPhone, add Verity to your Home Screen, open it there, then enable notifications.");
+        return;
+      }
+      const permission = await window.Notification.requestPermission();
       if (permission !== "granted") { setStatus("Notifications are blocked. Enable them in iPhone Settings."); return; }
       const registration = await navigator.serviceWorker.ready;
       const config = await api.pushConfig(base);
@@ -28,6 +32,10 @@ export function usePush(device: PairedDevice | undefined) {
 
   async function disableNotifications() {
     if (!device) return;
+    if (!("serviceWorker" in navigator)) {
+      setStatus("Notifications are not available in this browser.");
+      return;
+    }
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     await subscription?.unsubscribe().catch(() => false);
