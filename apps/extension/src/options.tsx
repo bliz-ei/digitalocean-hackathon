@@ -17,6 +17,28 @@ function defaultsFor(provider:string):{fastModel:string;reasoningModel:string}{
 }
 function safe(error:unknown){return error instanceof Error?error.message.slice(0,160):"Unable to save settings.";}
 
+/* Presentational only: map a status string to a tone class so the inline result reads
+ * green on success / red on failure (the sanctioned accent-on-text status use). The status
+ * strings themselves are unchanged — this only picks a color from the known messages. */
+function statusTone(status:string):string{
+  if(!status||status==="Testing…")return "";
+  const ok=status.startsWith("Saved locally")||status.startsWith("Connection passed")||status.startsWith("Key, models");
+  return ok?" vy-options__result--ok":" vy-options__result--err";
+}
+
+function ChevronIcon(){
+  return <svg className="vy-select__chevron" width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>;
+}
+function LockGlyph(){
+  return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.4" stroke="currentColor" strokeWidth="1.7"/>
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+    <circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>
+  </svg>;
+}
+
 export function Options(){
   const [provider,setProvider]=React.useState("digitalocean");
   const [apiKey,setApiKey]=React.useState("");
@@ -70,40 +92,59 @@ export function Options(){
   }
 
   return <div className="vy-root vy-options">
-    <div className="vy-options__head">
-      <VerityWordmark size={32}/>
-      <h1 className="vy-heading-xl">Bring your own key</h1>
+    <header className="vy-options__head">
+      <VerityWordmark size={30}/>
+      <span className="vy-options__eyebrow">Settings · Bring your own key</span>
+      <h1 className="vy-heading-xl vy-options__title">Run Verity on your own inference key</h1>
       <p className="vy-options__subtitle">Point Verity at your own inference provider. Requests run from this browser straight to the provider — your key never touches Verity’s backend.</p>
-    </div>
+    </header>
 
     <form className="vy-options__form" onSubmit={(e)=>{e.preventDefault();void saveProvider();}}>
-      <label className="vy-field">
-        <span className="vy-field__label">Provider</span>
-        <select className="vy-options__select" value={provider} onChange={(e)=>onProviderChange(e.target.value)}>
-          <option value="digitalocean">DigitalOcean</option>
-          <option value="openai">OpenAI</option>
-        </select>
-      </label>
+      <section className="vy-options__section">
+        <span className="vy-options__section-label">Provider &amp; key</span>
+        <label className="vy-field">
+          <span className="vy-field__label">Provider</span>
+          <div className="vy-select">
+            <select className="vy-select__input" value={provider} onChange={(e)=>onProviderChange(e.target.value)}>
+              <option value="digitalocean">DigitalOcean</option>
+              <option value="openai">OpenAI</option>
+            </select>
+            <ChevronIcon/>
+          </div>
+        </label>
 
-      <TextInput label="API key" type="password" autoComplete="new-password" spellCheck={false} value={apiKey} onChange={(e)=>setApiKey(e.target.value)} placeholder="sk-…" help="Stored locally in extension storage and cleared from this field after saving."/>
+        <TextInput className="vy-options__key" label="API key" type="password" autoComplete="new-password" spellCheck={false} value={apiKey} onChange={(e)=>setApiKey(e.target.value)} placeholder="sk-…" help="Stored locally in extension storage and cleared from this field after saving."/>
+      </section>
 
-      <div className="vy-options__grid">
-        <TextInput label="Fast model" autoComplete="off" value={fastModel} onChange={(e)=>setFastModel(e.target.value)}/>
-        <TextInput label="Reasoning model" autoComplete="off" value={reasoningModel} onChange={(e)=>setReasoningModel(e.target.value)}/>
-      </div>
+      <section className="vy-options__section">
+        <span className="vy-options__section-label">Models</span>
+        <div className="vy-options__grid">
+          <TextInput label="Fast model" autoComplete="off" value={fastModel} onChange={(e)=>setFastModel(e.target.value)}/>
+          <TextInput label="Reasoning model" autoComplete="off" value={reasoningModel} onChange={(e)=>setReasoningModel(e.target.value)}/>
+        </div>
+      </section>
 
-      <TextInput label="Monthly guard ($)" type="number" min="0.10" step="0.10" value={budget} onChange={(e)=>setBudget(e.target.value)} help="Verity stops BYOK requests once the estimated monthly spend reaches this cap."/>
+      <section className="vy-options__section">
+        <span className="vy-options__section-label">Spending guard</span>
+        <TextInput label="Monthly guard ($)" type="number" min="0.10" step="0.10" value={budget} onChange={(e)=>setBudget(e.target.value)} help="Verity stops BYOK requests once the estimated monthly spend reaches this cap."/>
+      </section>
 
       <div className="vy-options__actions">
-        <Button variant="tertiary" type="button" onClick={()=>void testProvider()}>Test connection</Button>
         <Button variant="primary" type="submit">Save locally</Button>
+        <Button variant="tertiary" type="button" onClick={()=>void testProvider()}>Test connection</Button>
         <span className="vy-options__spacer"/>
-        <Button variant="tertiary" type="button" onClick={()=>void deleteProvider()}>Delete key</Button>
+        <Button variant="tertiary" type="button" className="vy-options__delete" onClick={()=>void deleteProvider()}>Delete key</Button>
       </div>
-      <p className="vy-options__result" role="status">{status}</p>
+      <p className={`vy-options__result${statusTone(status)}`} role="status">{status}</p>
     </form>
 
-    <p className="vy-options__note">Your API key and usage ledger are stored only in this browser’s local extension storage. Verity never sends your key to its backend; BYOK requests go directly from your browser to the provider you configure above.</p>
+    <aside className="vy-options__trust">
+      <span className="vy-options__trust-icon"><LockGlyph/></span>
+      <div className="vy-options__trust-text">
+        <span className="vy-options__trust-title">Your keys stay local</span>
+        <p className="vy-options__note">Your API key and usage ledger are stored only in this browser’s local extension storage. Verity never sends your key to its backend; BYOK requests go directly from your browser to the provider you configure above.</p>
+      </div>
+    </aside>
   </div>;
 }
 
