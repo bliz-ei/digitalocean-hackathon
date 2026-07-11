@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity.invalid/schemas/phase0/transcript.schema.json",
+  "title": "Normalized final transcript fixture",
+  "type": "object",
+  "required": ["schema_version", "fixture_status", "measured", "segments"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fixture_status": {"enum": ["placeholder_not_measured", "reviewed_disclosed_fixture"]},
+    "measured": {"type": "boolean"},
+    "segments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["speaker", "text", "start_ms", "end_ms"],
+        "properties": {
+          "speaker": {"enum": ["A", "B"]},
+          "text": {"type": "string"},
+          "start_ms": {"type": "integer", "minimum": 0},
+          "end_ms": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

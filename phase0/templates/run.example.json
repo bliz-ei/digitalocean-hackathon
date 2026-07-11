@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "phase0_run",
+  "run_id": "replace-with-generated-id",
+  "boundary": "tab_capture",
+  "status": "not_run",
+  "owner": "replace-me",
+  "started_at": null,
+  "ended_at": null,
+  "environment": {
+    "device_model": null,
+    "os_version": null,
+    "browser_version": null,
+    "network": null,
+    "provider": null,
+    "provider_mode": null
+  },
+  "timestamps": {
+    "capture_start": null,
+    "first_audio_chunk": null,
+    "first_final_transcript": null,
+    "claim_sentence_finalized": null,
+    "push_sent": null,
+    "push_received": null,
+    "notification_opened": null
+  },
+  "measurements": {},
+  "failure_mode": null,
+  "pass_criteria_checked": [],
+  "notes": null,
+  "evidence_files": []
+}

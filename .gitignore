@@ -1,0 +1,25 @@
+# Phase 0 local evidence and secrets. Only sanitized examples are committed.
+node_modules/
+dist/
+.venv/
+*.egg-info/
+verity.db
+playwright-report/
+test-results/
+
+phase0/local/
+phase0/results/*.json
+phase0/results/*.jsonl
+phase0/results/*.csv
+phase0/results/*.webm
+phase0/results/*.opus
+phase0/results/*.wav
+phase0/results/*.redacted
+!phase0/results/README.md
+
+__pycache__/
+*.pyc
+
+.env
+.env.*
+!.env.example

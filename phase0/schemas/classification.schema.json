@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity.invalid/schemas/phase0/classification.schema.json",
+  "title": "Claim classification fixture",
+  "type": "object",
+  "required": ["schema_version", "fixture_status", "measured", "classification", "queries"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fixture_status": {"enum": ["placeholder_not_measured", "reviewed_disclosed_fixture"]},
+    "measured": {"type": "boolean"},
+    "classification": {"type": ["string", "null"], "enum": ["opinion", "factual_claim", "unverifiable", null]},
+    "queries": {"type": "object", "required": ["neutral", "support", "counter"]}
+  },
+  "additionalProperties": true
+}

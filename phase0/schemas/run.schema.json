@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity.invalid/schemas/phase0/run.schema.json",
+  "title": "Phase 0 run record",
+  "type": "object",
+  "required": ["schema_version", "artifact_kind", "run_id", "boundary", "status", "environment", "timestamps", "measurements", "evidence_files"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_kind": {"const": "phase0_run"},
+    "run_id": {"type": "string"},
+    "boundary": {"enum": ["baseline", "tab_capture", "stt", "byok_digitalocean", "byok_openai_compatible", "iphone_push", "fallback"]},
+    "status": {"enum": ["not_run", "in_progress", "passed", "failed", "blocked"]},
+    "environment": {"type": "object"},
+    "timestamps": {"type": "object"},
+    "measurements": {"type": "object"},
+    "evidence_files": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

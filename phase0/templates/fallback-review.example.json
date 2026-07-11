@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "fallback_review",
+  "status": "not_run",
+  "reviewed_at": null,
+  "owner": null,
+  "activation_is_explicit_or_bounded": false,
+  "visible_label": "Demo fallback",
+  "live_and_fixture_contracts_match": false,
+  "citation_revalidation_owner": null,
+  "citation_revalidated_at": null,
+  "checkpoint_files": [],
+  "notes": null
+}

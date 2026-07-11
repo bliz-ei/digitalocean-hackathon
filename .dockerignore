@@ -1,0 +1,9 @@
+.git
+node_modules
+**/node_modules
+**/__pycache__
+*.pyc
+.env*
+phase0/local
+phase0/results
+apps/*/dist

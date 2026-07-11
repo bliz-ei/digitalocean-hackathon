@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity.invalid/schemas/phase0/evidence.schema.json",
+  "title": "Evidence checkpoint fixture",
+  "type": "object",
+  "required": ["schema_version", "fixture_status", "measured", "items"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fixture_status": {"enum": ["placeholder_not_measured", "reviewed_disclosed_fixture"]},
+    "measured": {"type": "boolean"},
+    "items": {"type": "array", "items": {"type": "object", "required": ["id", "stance", "title", "canonical_url", "publisher", "published_at", "retrieved_at", "excerpt", "source_tier", "content_hash"]}}
+  },
+  "additionalProperties": true
+}

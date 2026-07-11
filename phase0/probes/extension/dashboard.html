@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Verity Phase 0 probe</title>
+    <link rel="stylesheet" href="probe.css">
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">VERITY · PHASE 0</p>
+      <h1>Boundary probe</h1>
+      <p>This disposable dashboard exports timing metadata only. Start capture by clicking the extension action while the frozen YouTube tab is active.</p>
+      <section>
+        <h2>Tab audio</h2>
+        <dl id="status"></dl>
+        <label for="transport">Credential-free loopback relay</label>
+        <input id="transport" type="url" placeholder="ws://127.0.0.1:8787" spellcheck="false">
+        <div class="actions">
+          <button id="save-transport">Save for next capture</button>
+          <button id="disconnect">Force transport disconnect</button>
+          <button id="stop" class="danger">Stop and release audio</button>
+        </div>
+        <div class="actions">
+          <button id="export">Export sanitized JSONL</button>
+          <button id="clear">Clear log</button>
+          <a class="button" href="byok.html" target="_blank" rel="noreferrer">Open BYOK probe</a>
+        </div>
+        <p id="message" role="status"></p>
+      </section>
+      <section><h2>Recent events</h2><pre id="events">Waiting for probe state…</pre></section>
+    </main>
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

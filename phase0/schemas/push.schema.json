@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verity.invalid/schemas/phase0/push.schema.json",
+  "title": "Simulated push outcome fixture",
+  "type": "object",
+  "required": ["schema_version", "fixture_status", "measured", "outcome"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fixture_status": {"enum": ["placeholder_not_measured", "reviewed_disclosed_fixture"]},
+    "measured": {"type": "boolean"},
+    "outcome": {"type": ["object", "null"]}
+  },
+  "additionalProperties": true
+}

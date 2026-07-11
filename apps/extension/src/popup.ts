@@ -1,0 +1,1 @@
+document.querySelector("#start")?.addEventListener("click",()=>chrome.runtime.sendMessage({type:"START_FIXTURE"}));document.querySelector("#stop")?.addEventListener("click",()=>chrome.runtime.sendMessage({type:"STOP_FIXTURE"}));

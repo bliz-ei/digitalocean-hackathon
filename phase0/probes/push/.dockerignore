@@ -1,0 +1,5 @@
+node_modules
+.git
+phase0/local
+phase0/results
+.env*
