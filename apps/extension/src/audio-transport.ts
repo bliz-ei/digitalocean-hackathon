@@ -1,4 +1,4 @@
-import type {AudioChunkMetadata, ClassificationResult, WsEnvelope} from "@verity/contracts";
+import type {AudioChunkMetadata, ClassificationResult, VerdictDraft, WsEnvelope} from "@verity/contracts";
 
 type EventHandler = (event: WsEnvelope) => void | Promise<void>;
 type SocketFactory = (url: string) => WebSocket;
@@ -60,6 +60,10 @@ export class AudioTransport {
 
   sendClassification(result: ClassificationResult): void {
     this.send("classification_result", result);
+  }
+
+  sendVerdict(result: VerdictDraft): void {
+    this.send("verdict_draft", result);
   }
 
   stop(): void {

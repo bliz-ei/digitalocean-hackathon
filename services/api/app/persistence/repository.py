@@ -1,7 +1,7 @@
 import hashlib, sqlite3
 from pathlib import Path
 from uuid import uuid4
-from app.domain.models import Claim, ClassificationResult, TranscriptSegment
+from app.domain.models import Claim, ClaimState, ClassificationResult, EvidenceRecord, TranscriptSegment
 class Repository:
     def create_session(self,key:str,session_id:str)->str: raise NotImplementedError
     def has_session(self,session_id:str)->bool: raise NotImplementedError
@@ -9,8 +9,10 @@ class Repository:
     def get_claim(self,public_id:str)->Claim|None: raise NotImplementedError
     def save_transcript(self,session_id:str,segment:TranscriptSegment)->bool: raise NotImplementedError
     def create_claim(self,claim:Claim,result:ClassificationResult)->bool: raise NotImplementedError
+    def save_claim_if_active(self,claim:Claim)->bool: raise NotImplementedError
+    def complete_claim(self,claim:Claim,records:list[EvidenceRecord]|None=None)->bool: raise NotImplementedError
 class MemoryRepository(Repository):
-    def __init__(self): self.sessions={}; self.claims={}; self.transcripts={}; self.claim_results={}
+    def __init__(self): self.sessions={}; self.claims={}; self.transcripts={}; self.claim_results={}; self.notification_jobs=set()
     def create_session(self,key,session_id): return self.sessions.setdefault(key,session_id)
     def has_session(self,session_id): return session_id in self.sessions.values()
     def save_claim(self,claim): self.claims[claim.public_id]=claim.model_copy(deep=True)
@@ -22,6 +24,14 @@ class MemoryRepository(Repository):
     def create_claim(self,claim,result):
         if claim.public_id in self.claims: return False
         self.save_claim(claim); self.claim_results[claim.public_id]=result.model_copy(deep=True); return True
+    def save_claim_if_active(self,claim):
+        current=self.claims.get(claim.public_id)
+        if not current or current.state in {ClaimState.COMPLETE,ClaimState.INSUFFICIENT_EVIDENCE,ClaimState.FAILED}: return False
+        self.save_claim(claim); return True
+    def complete_claim(self,claim,records=None):
+        if claim.state not in {ClaimState.COMPLETE,ClaimState.INSUFFICIENT_EVIDENCE,ClaimState.FAILED}: raise ValueError("claim is not terminal")
+        if not self.save_claim_if_active(claim): return False
+        self.notification_jobs.add(claim.public_id); return True
 class SQLiteRepository(Repository):
     def __init__(self,path:Path):
         self.db=sqlite3.connect(path,check_same_thread=False); self.db.execute("create table if not exists sessions(id text primary key,idempotency_key text unique)"); self.db.execute("create table if not exists claims(public_id text primary key, body text not null)"); self.db.execute("create table if not exists transcripts(session_id text, segment_id text, body text not null, primary key(session_id,segment_id))")
@@ -36,6 +46,13 @@ class SQLiteRepository(Repository):
     def create_claim(self,claim,result):
         if self.get_claim(claim.public_id): return False
         self.save_claim(claim); return True
+    def save_claim_if_active(self,claim):
+        current=self.get_claim(claim.public_id)
+        if not current or current.state in {ClaimState.COMPLETE,ClaimState.INSUFFICIENT_EVIDENCE,ClaimState.FAILED}: return False
+        self.save_claim(claim); return True
+    def complete_claim(self,claim,records=None):
+        if claim.state not in {ClaimState.COMPLETE,ClaimState.INSUFFICIENT_EVIDENCE,ClaimState.FAILED}: raise ValueError("claim is not terminal")
+        return self.save_claim_if_active(claim)
 
 class PostgresRepository(Repository):
     def __init__(self, database_url: str):
@@ -115,6 +132,63 @@ class PostgresRepository(Repository):
                  Jsonb(claim.model_dump(mode="json"))),
             ).fetchone()
         return row is not None
+
+    def save_claim_if_active(self, claim: Claim) -> bool:
+        from psycopg.types.json import Jsonb
+        with self.db.transaction():
+            row = self.db.execute(
+                """UPDATE claims SET state=%s, completed_at=%s, body=%s
+                   WHERE public_id=%s AND state NOT IN ('COMPLETE','INSUFFICIENT_EVIDENCE','FAILED')
+                   RETURNING public_id""",
+                (claim.state.value, claim.completed_at, Jsonb(claim.model_dump(mode="json")), claim.public_id),
+            ).fetchone()
+        return row is not None
+
+    def complete_claim(self, claim: Claim, records: list[EvidenceRecord] | None = None) -> bool:
+        from psycopg.types.json import Jsonb
+        if claim.state not in {ClaimState.COMPLETE, ClaimState.INSUFFICIENT_EVIDENCE, ClaimState.FAILED}:
+            raise ValueError("claim is not terminal")
+        with self.db.transaction():
+            row = self.db.execute(
+                """UPDATE claims SET state=%s, completed_at=%s, body=%s
+                   WHERE public_id=%s AND state NOT IN ('COMPLETE','INSUFFICIENT_EVIDENCE','FAILED')
+                   RETURNING id""",
+                (claim.state.value, claim.completed_at, Jsonb(claim.model_dump(mode="json")), claim.public_id),
+            ).fetchone()
+            if not row:
+                return False
+            claim_id = row[0]
+            captured = {item.evidence.id: item.captured_text for item in records or []}
+            for evidence in claim.evidence:
+                self.db.execute(
+                    """INSERT INTO evidence
+                       (id, claim_id, stance, title, canonical_url, publisher, published_at,
+                        retrieved_at, excerpt, source_tier, content_hash, query_role, independent_key, captured_text)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                       ON CONFLICT (id) DO NOTHING""",
+                    (evidence.id, claim_id, evidence.stance.value, evidence.title,
+                     str(evidence.canonical_url), evidence.publisher, evidence.published_at,
+                     evidence.retrieved_at, evidence.excerpt, evidence.source_tier.value,
+                     evidence.content_hash, evidence.query_role.value, evidence.independent_key,
+                     captured.get(evidence.id, evidence.excerpt)),
+                )
+            if claim.verdict:
+                verdict = claim.verdict
+                self.db.execute(
+                    """INSERT INTO verdicts
+                       (claim_id,label,confidence,explanation,uncertainty,counterevidence_summary,
+                        common_ground,citation_ids,model_provider,model_name,prompt_version)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                       ON CONFLICT (claim_id) DO NOTHING""",
+                    (claim_id, verdict.label.value, verdict.confidence, verdict.explanation,
+                     verdict.uncertainty, verdict.counterevidence_summary, verdict.common_ground,
+                     verdict.citation_ids, verdict.model_provider, verdict.model_name, verdict.prompt_version),
+                )
+            self.db.execute(
+                "INSERT INTO notification_jobs (claim_id, public_id) VALUES (%s,%s) ON CONFLICT DO NOTHING",
+                (claim_id, claim.public_id),
+            )
+        return True
 
     def close(self) -> None:
         self.db.close()

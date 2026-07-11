@@ -1,12 +1,42 @@
-import asyncio
-from datetime import datetime
-from app.domain.models import Claim,ClaimState,Evidence,Verdict
+from app.domain.models import Claim, ClaimState, ClassificationResult
 from app.domain.state import transition
-async def run_hero(session_id,repo,providers,emit):
-    data=await providers.hero(); c=Claim.model_validate({**data["claim"],"session_id":session_id,"state":"CAPTURING","evidence":[],"verdict":None})
-    repo.save_claim(c); await emit(c)
-    for state in [ClaimState.TRANSCRIBING,ClaimState.CLAIM_CANDIDATE,ClaimState.CHECKING]: c.state=transition(c.state,state); repo.save_claim(c); await emit(c)
-    support,counter=await asyncio.gather(asyncio.sleep(0,result=data["evidence"][:2]),asyncio.sleep(0,result=data["evidence"][2:]))
-    c.evidence=[Evidence.model_validate(x) for x in support+counter]; c.state=transition(c.state,ClaimState.EVIDENCE_READY); repo.save_claim(c); await emit(c)
-    c.state=transition(c.state,ClaimState.SYNTHESIZING); repo.save_claim(c); await emit(c)
-    c.verdict=Verdict.model_validate(data["verdict"]); c.state=transition(c.state,ClaimState.COMPLETE); c.completed_at=datetime.fromisoformat(data["completed_at"]); c=Claim.model_validate(c.model_dump()); repo.save_claim(c); await providers.push(c.public_id); await emit(c); return c
+from app.pipeline.evidence import EvidencePipeline
+from app.providers.evidence import RecordedEvidenceProvider
+
+
+async def run_hero(session_id, repository, providers, emit):
+    data = await providers.hero()
+    claim = Claim.model_validate(
+        {
+            **data["claim"],
+            "session_id": session_id,
+            "state": ClaimState.CAPTURING,
+            "evidence": [],
+            "verdict": None,
+            "fixture_mode": True,
+        }
+    )
+    repository.save_claim(claim)
+    await emit(claim)
+    for state in (ClaimState.TRANSCRIBING, ClaimState.CLAIM_CANDIDATE, ClaimState.CHECKING):
+        claim.state = transition(claim.state, state)
+        repository.save_claim(claim)
+        await emit(claim)
+
+    async def relay(_kind: str, payload: dict) -> None:
+        value = payload.get("claim")
+        if value:
+            await emit(Claim.model_validate(value))
+
+    recorded = RecordedEvidenceProvider()
+    result = ClassificationResult(
+        candidate_id="hero-fixture",
+        classification="factual_claim",
+        normalized_claim=claim.normalized_text,
+        neutral_queries=["electric vehicle lifecycle carbon emissions"],
+        support_queries=["electric vehicle zero direct emissions"],
+        counter_queries=["electric vehicle manufacturing lifecycle emissions"],
+    )
+    completed = await EvidencePipeline(repository, recorded, recorded, recorded, relay).run(claim, result)
+    await providers.push(completed.public_id)
+    return completed

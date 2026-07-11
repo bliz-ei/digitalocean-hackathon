@@ -7,6 +7,8 @@ import pytest
 from app.persistence.repository import PostgresRepository
 from app.domain.models import Claim, ClaimState, ClassificationResult, TranscriptSegment, utcnow
 from app.pipeline.hero import run_hero
+from app.pipeline.evidence import EvidencePipeline
+from app.providers.evidence import RecordedEvidenceProvider
 from app.providers.fakes import FakeProviders
 
 
@@ -24,15 +26,20 @@ def test_postgres_persists_canonical_hero_claim():
         assert not repository.save_transcript(session_id, segment)
         live_claim = Claim(
             public_id=f"phase2-{uuid4()}", session_id=session_id, speaker_label="Speaker A",
-            exact_text="A final sentence.", normalized_text="A final sentence", start_ms=1, end_ms=2,
+            exact_text="Electric vehicles produce no carbon emissions.", normalized_text="Electric vehicles produce no carbon emissions", start_ms=1, end_ms=2,
             classification="factual_claim", state=ClaimState.CHECKING, created_at=utcnow(), fixture_mode=False,
         )
         result = ClassificationResult(
-            candidate_id="candidate", classification="factual_claim", normalized_claim="A final sentence",
-            neutral_queries=["neutral"], support_queries=["support"], counter_queries=["counter"],
+            candidate_id="candidate", classification="factual_claim", normalized_claim="Electric vehicles produce no carbon emissions",
+            neutral_queries=["electric vehicle lifecycle emissions"], support_queries=["electric vehicle direct emissions"], counter_queries=["electric vehicle production emissions"],
         )
         assert repository.create_claim(live_claim, result)
         assert not repository.create_claim(live_claim, result)
+        evidence = RecordedEvidenceProvider()
+        completed = asyncio.run(EvidencePipeline(repository, evidence, evidence, evidence, lambda *_: _noop()).run(live_claim, result))
+        assert completed.state == ClaimState.COMPLETE
+        assert repository.db.execute("SELECT count(*) FROM evidence WHERE claim_id=(SELECT id FROM claims WHERE public_id=%s)", (live_claim.public_id,)).fetchone()[0] == 3
+        assert repository.db.execute("SELECT count(*) FROM notification_jobs WHERE public_id=%s", (live_claim.public_id,)).fetchone()[0] == 1
     finally:
         repository.close()
 

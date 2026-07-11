@@ -1,6 +1,6 @@
-import type {ClaimCandidate, ClassificationResult, WsEnvelope} from "@verity/contracts";
+import type {ClaimCandidate, SynthesisRequest, WsEnvelope} from "@verity/contracts";
 import {AudioTransport} from "./audio-transport";
-import {classify, type ProviderConfig} from "./classifier";
+import {classify, synthesize, type ProviderConfig} from "./classifier";
 
 type StartMessage = {type:"OFFSCREEN_START";streamId:string;sessionId:string;credential:string;provider?:ProviderConfig};
 
@@ -45,6 +45,10 @@ async function handleEvent(event:WsEnvelope,provider?:ProviderConfig):Promise<vo
   if(event.type==="classification_request"&&provider){
     try{transport?.sendClassification(await classify(event.payload as unknown as ClaimCandidate,provider))}
     catch(error){await publish({type:"classification_failed",payload:{message:safeError(error)}})}
+  }
+  if(event.type==="synthesis_request"&&provider){
+    try{transport?.sendVerdict(await synthesize(event.payload as unknown as SynthesisRequest,provider))}
+    catch(error){await publish({type:"synthesis_failed",payload:{message:safeError(error)}})}
   }
 }
 

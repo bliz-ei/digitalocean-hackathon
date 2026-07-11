@@ -17,12 +17,15 @@ from app.domain.models import (
     SessionCreate,
     SessionCreated,
     Verdict,
+    VerdictDraft,
     WsEnvelope,
     utcnow,
 )
 from app.persistence.repository import MemoryRepository, PostgresRepository, SQLiteRepository
 from app.pipeline.hero import run_hero
 from app.pipeline.live import LiveSession
+from app.pipeline.evidence import EvidencePipeline
+from app.providers.evidence import configured_evidence_providers
 from app.providers.fakes import FakeProviders
 from app.providers.live import RecordedSttAdapter, configured_fast_classifier
 
@@ -38,7 +41,8 @@ repo = (
 providers = FakeProviders()
 live_sessions: dict[str, LiveSession] = {}
 team_classifier = configured_fast_classifier()
-app = FastAPI(title="Verity API", version="0.2.0")
+search_provider, page_fetcher, team_reasoner = configured_evidence_providers()
+app = FastAPI(title="Verity API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -55,7 +59,13 @@ def health():
 
 @app.get("/readyz")
 def ready():
-    return {"status": "ready", "stt": "recorded", "classifier": team_classifier.name}
+    return {
+        "status": "ready",
+        "stt": "recorded",
+        "classifier": team_classifier.name,
+        "search": search_provider.name,
+        "reasoner": team_reasoner.name,
+    }
 
 
 @app.post("/v1/sessions", response_model=SessionCreated, status_code=201)
@@ -78,18 +88,15 @@ def claim(public_id: str):
 
 
 @app.post("/v1/claims/{public_id}/verdict", response_model=Claim)
-def verdict(public_id: str, body: Verdict):
+async def verdict(public_id: str, body: VerdictDraft):
     found = repo.get_claim(public_id)
     if not found:
         raise HTTPException(404, "claim not found")
-    try:
-        candidate = found.model_copy(deep=True)
-        candidate.verdict = body
-        found = Claim.model_validate(candidate.model_dump())
-    except ValidationError as error:
-        raise HTTPException(422, str(error)) from error
-    repo.save_claim(found)
-    return found
+    runtime = live_sessions.get(found.session_id)
+    completed = await runtime.evidence_pipeline.accept_draft(body) if runtime and runtime.evidence_pipeline else None
+    if not completed:
+        raise HTTPException(409, "claim is not awaiting a verdict draft")
+    return completed
 
 
 @app.post("/v1/pairings", response_model=Pairing)
@@ -173,12 +180,21 @@ async def stream(ws: WebSocket, session_id: str):
                     continue
                 runtime = live_sessions.get(session_id)
                 if not runtime or runtime.closed:
+                    dispatch_mode = str(env.payload.get("dispatch_mode", "server"))
+                    evidence = EvidencePipeline(
+                        repository=repo,
+                        search=search_provider,
+                        fetcher=page_fetcher,
+                        reasoner=None if dispatch_mode == "client" else team_reasoner,
+                        emit=send,
+                    )
                     runtime = LiveSession(
                         session_id=session_id,
                         repository=repo,
                         stt_adapter=RecordedSttAdapter(),
-                        classifier=None if env.payload.get("dispatch_mode") == "client" else team_classifier,
+                        classifier=None if dispatch_mode == "client" else team_classifier,
                         emit=send,
+                        evidence_pipeline=evidence,
                     )
                     live_sessions[session_id] = runtime
                 else:
@@ -207,6 +223,16 @@ async def stream(ws: WebSocket, session_id: str):
                     await runtime.classification(ClassificationResult.model_validate(env.payload))
                 except ValidationError:
                     await send("error", {"code": "invalid_classification"}, env.sequence)
+            elif env.type == "verdict_draft":
+                if not runtime or not runtime.evidence_pipeline:
+                    await send("error", {"code": "claim_not_awaiting_synthesis"}, env.sequence)
+                    continue
+                try:
+                    completed = await runtime.evidence_pipeline.accept_draft(VerdictDraft.model_validate(env.payload))
+                    if completed is None:
+                        await send("error", {"code": "stale_verdict_draft"}, env.sequence)
+                except ValidationError:
+                    await send("error", {"code": "invalid_verdict_draft"}, env.sequence)
             elif env.type == "stop_live":
                 if runtime:
                     await runtime.stop()

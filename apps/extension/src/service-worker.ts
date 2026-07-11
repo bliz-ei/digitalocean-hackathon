@@ -47,7 +47,7 @@ async function consume(event:{type:string;payload:Record<string,unknown>}):Promi
   if(event.type==="capture_state")state.connection=String(event.payload.state);
   if(event.type==="heartbeat_ack")state.connection="CONNECTED";
   if(event.type==="transcript_final")state.transcripts=[...state.transcripts,event.payload as unknown as TranscriptSegment].slice(-8);
-  if(event.type==="claim_state"&&event.payload.claim)state.claim=event.payload.claim as unknown as Claim;
+  if(["claim_state","pipeline_state","verdict_complete"].includes(event.type)&&event.payload.claim)state.claim=event.payload.claim as unknown as Claim;
   if(event.type.endsWith("failed")||event.type==="capture_error")state.error=String(event.payload.message??event.payload.reason??"Verity could not continue.");
   await update(state);
 }

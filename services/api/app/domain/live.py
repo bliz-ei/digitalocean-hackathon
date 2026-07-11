@@ -16,7 +16,7 @@ def normalized_claim(value: str) -> str:
 
 def digest(*parts: object) -> str:
     raw = "\x1f".join(str(part) for part in parts)
-    return hashlib.sha256(raw.encode()).hexdigest()[:24]
+    return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
 class AudioLedger:

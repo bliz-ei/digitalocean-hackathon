@@ -1,0 +1,34 @@
+{
+  "reviewed_at": "2026-07-11T16:30:00Z",
+  "reviewer": "Codex implementation review",
+  "status": "implementation_review_complete",
+  "human_recheck_before_demo": true,
+  "claim": "Electric vehicles produce no carbon emissions.",
+  "finding": "Misleading: direct tailpipe emissions can be zero while lifecycle emissions remain.",
+  "sources": [
+    {
+      "publisher": "US EPA",
+      "url": "https://www.epa.gov/greenvehicles/electric-vehicle-myths",
+      "title_verified": true,
+      "excerpt_verified": true,
+      "stance": "context",
+      "independent": true
+    },
+    {
+      "publisher": "US Department of Energy",
+      "url": "https://afdc.energy.gov/vehicles/electric-emissions",
+      "title_verified": true,
+      "excerpt_verified": true,
+      "stance": "support",
+      "independent": true
+    },
+    {
+      "publisher": "ICCT",
+      "url": "https://theicct.org/publication/a-global-comparison-of-the-life-cycle-greenhouse-gas-emissions-of-combustion-engine-and-electric-passenger-cars/",
+      "title_verified": true,
+      "excerpt_verified": true,
+      "stance": "counter",
+      "independent": true
+    }
+  ]
+}

@@ -141,14 +141,32 @@
             "title": "Id",
             "type": "string"
           },
-          "published_at": {
-            "format": "date-time",
-            "title": "Published At",
+          "independent_key": {
+            "default": "legacy",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Independent Key",
             "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
           },
           "publisher": {
             "title": "Publisher",
             "type": "string"
+          },
+          "query_role": {
+            "$ref": "#/components/schemas/SearchRole",
+            "default": "neutral"
           },
           "retrieved_at": {
             "format": "date-time",
@@ -172,7 +190,6 @@
           "title",
           "canonical_url",
           "publisher",
-          "published_at",
           "retrieved_at",
           "excerpt",
           "source_tier",
@@ -231,6 +248,15 @@
         "title": "PushSubscription",
         "type": "object"
       },
+      "SearchRole": {
+        "enum": [
+          "neutral",
+          "support",
+          "counter"
+        ],
+        "title": "SearchRole",
+        "type": "string"
+      },
       "SessionCreate": {
         "properties": {
           "fixture_mode": {
@@ -288,7 +314,8 @@
         "enum": [
           "primary",
           "research",
-          "established"
+          "established",
+          "other"
         ],
         "title": "SourceTier",
         "type": "string"
@@ -410,6 +437,94 @@
         "title": "Verdict",
         "type": "object"
       },
+      "VerdictDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Citation Ids",
+            "type": "array"
+          },
+          "claim_public_id": {
+            "title": "Claim Public Id",
+            "type": "string"
+          },
+          "common_ground": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Common Ground"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "counterevidence_summary": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Counterevidence Summary",
+            "type": "string"
+          },
+          "explanation": {
+            "maxLength": 700,
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/components/schemas/VerdictLabel"
+          },
+          "model_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Model Name",
+            "type": "string"
+          },
+          "model_provider": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Model Provider",
+            "type": "string"
+          },
+          "prompt_version": {
+            "const": "phase3-v1",
+            "default": "phase3-v1",
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "uncertainty": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Uncertainty",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_public_id",
+          "label",
+          "confidence",
+          "explanation",
+          "uncertainty",
+          "counterevidence_summary",
+          "citation_ids",
+          "model_provider",
+          "model_name"
+        ],
+        "title": "VerdictDraft",
+        "type": "object"
+      },
       "VerdictLabel": {
         "enum": [
           "Supported",
@@ -425,7 +540,7 @@
   },
   "info": {
     "title": "Verity API",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -518,7 +633,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Verdict"
+                "$ref": "#/components/schemas/VerdictDraft"
               }
             }
           },

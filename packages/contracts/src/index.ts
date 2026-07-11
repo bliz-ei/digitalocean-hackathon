@@ -1,7 +1,8 @@
 export const claimStates = ["CAPTURING","TRANSCRIBING","CLAIM_CANDIDATE","CHECKING","EVIDENCE_READY","SYNTHESIZING","COMPLETE","INSUFFICIENT_EVIDENCE","FAILED"] as const;
 export type ClaimState = typeof claimStates[number];
-export type Evidence = {id:string; stance:"support"|"counter"|"context"; title:string; canonical_url:string; publisher:string; published_at:string; retrieved_at:string; excerpt:string; source_tier:"primary"|"research"|"established"; content_hash:string};
+export type Evidence = {id:string; stance:"support"|"counter"|"context"; title:string; canonical_url:string; publisher:string; published_at:string|null; retrieved_at:string; excerpt:string; source_tier:"primary"|"research"|"established"|"other"; content_hash:string; query_role:"neutral"|"support"|"counter"; independent_key:string};
 export type Verdict = {label:"Supported"|"Misleading"|"Disputed"|"Unsupported"|"Insufficient evidence"; confidence:number; explanation:string; uncertainty:string; counterevidence_summary:string; common_ground:string|null; citation_ids:string[]; model_provider:string; model_name:string; prompt_version:string};
+export type VerdictDraft = Verdict & {claim_public_id:string; prompt_version:"phase3-v1"};
 export type Claim = {public_id:string; session_id:string; speaker_label:string; exact_text:string; normalized_text:string; start_ms:number; end_ms:number; classification:"opinion"|"factual_claim"|"unverifiable"; state:ClaimState; created_at:string; completed_at:string|null; evidence:Evidence[]; verdict:Verdict|null; fixture_mode:boolean};
 export type SessionCreated = {id:string; credential:string; fixture_mode:boolean};
 export type Speaker = "A"|"B";
@@ -9,6 +10,7 @@ export type AudioChunkMetadata = {stream_id:string; chunk_sequence:number; captu
 export type TranscriptSegment = {segment_id:string; speaker:Speaker; text:string; start_ms:number; end_ms:number; is_final:boolean};
 export type ClaimCandidate = {candidate_id:string; speaker:Speaker; exact_text:string; normalized_text:string; start_ms:number; end_ms:number; context_before:string};
 export type ClassificationResult = {candidate_id:string; classification:"opinion"|"factual_claim"|"unverifiable"; normalized_claim:string|null; neutral_queries:string[]; support_queries:string[]; counter_queries:string[]; prompt_version:string; provider:string; model:string};
+export type SynthesisRequest = {claim:Omit<Claim,"evidence"|"verdict">; evidence:Evidence[]; validation_errors:string[]; attempt:number; prompt_version:"phase3-v1"};
 export type WsEnvelope<T=Record<string,unknown>> = {type:string; schema_version:"2"; session_id:string; sequence:number; payload:T};
 export const api = {
   async createSession(baseUrl:string, fixtureMode=true):Promise<SessionCreated> { return request(`${baseUrl}/v1/sessions`, {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({idempotency_key:crypto.randomUUID(),fixture_mode:fixtureMode})}); },
