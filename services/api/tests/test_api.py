@@ -70,7 +70,8 @@ def test_extension_fixture_delivers_exactly_one_paired_notification(client):
     assert len(push.deliveries) == 1
     payload = push.deliveries[0][1]
     assert payload["notification_id"] == f'claim:{payload["public_id"]}'
-    assert payload["title"] == "Verity found context"
+    assert payload["title"] == "Verity found missing context"
+    assert payload["body"] == "Tap to inspect 3 sources."
 
 def test_live_websocket_records_finals_and_creates_target_claim_once(client):
     session = create_session(client, "live")
