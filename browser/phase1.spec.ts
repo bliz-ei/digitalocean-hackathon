@@ -3,7 +3,8 @@ import path from "node:path";
 
 test("explicit fixture action opens the canonical PWA verdict", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Start fixture demo" }).click();
+  await page.getByText("Need a reliable demo?").click();
+  await page.getByRole("button", { name: "Run demo evidence set" }).click();
 
   await expect(page).toHaveURL(/\/claims\/hero-ev-lifecycle-2026$/);
   await expect(page.getByRole("heading", { name: "Misleading" })).toBeVisible();
@@ -57,7 +58,7 @@ test("the production MV3 bundle loads as an unpacked extension", async ({}, test
     const popup = await context.newPage();
     await popup.goto(new URL("popup.html", worker.url()).href);
     await expect(popup.getByRole("button", { name: "Start live listening" })).toBeVisible();
-    await expect(popup.getByRole("button", { name: "Demo fallback" })).toBeVisible();
+    await expect(popup.getByRole("button", { name: "Run demo" })).toBeVisible();
   } finally {
     await context.close();
   }
