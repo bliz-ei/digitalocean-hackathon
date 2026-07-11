@@ -10,7 +10,13 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-if (-not (Get-Command doctl -ErrorAction SilentlyContinue)) {
+$doctlCommand = (Get-Command doctl -ErrorAction SilentlyContinue).Source
+if (-not $doctlCommand) {
+  $wingetRoot = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages"
+  $doctlCommand = Get-ChildItem $wingetRoot -Filter doctl.exe -Recurse -ErrorAction SilentlyContinue |
+    Select-Object -First 1 -ExpandProperty FullName
+}
+if (-not $doctlCommand) {
   throw "doctl is required. Install it, then rerun this command."
 }
 if (-not $AccessToken) { throw "Set DIGITALOCEAN_ACCESS_TOKEN before deploying." }
@@ -54,16 +60,16 @@ node scripts/run-python.mjs scripts/prepare_deploy.py
 node scripts/run-python.mjs scripts/smoke_gradient.py
 
 $spec = Join-Path $stateDir "app.yaml"
-$doctl = @("--access-token", $AccessToken, "apps")
-& doctl @doctl spec validate $spec | Out-Null
+$doctlArgs = @("--access-token", $AccessToken, "apps")
+& $doctlCommand @doctlArgs spec validate $spec | Out-Null
 if ($AppId) {
-  & doctl @doctl update $AppId --spec $spec --update-sources --wait | Out-Null
+  & $doctlCommand @doctlArgs update $AppId --spec $spec --update-sources --wait | Out-Null
   $id = $AppId
 } else {
-  $id = (& doctl @doctl create --spec $spec --wait --format ID --no-header).Trim()
+  $id = (& $doctlCommand @doctlArgs create --spec $spec --wait --format ID --no-header).Trim()
 }
 if (-not $id) { throw "DigitalOcean did not return an app ID." }
-$url = (& doctl --access-token $AccessToken apps get $id --format DefaultIngress --no-header).Trim()
+$url = (& $doctlCommand --access-token $AccessToken apps get $id --format DefaultIngress --no-header).Trim()
 if (-not $url.StartsWith("http")) { $url = "https://$url" }
 
 $env:VERITY_HEALTH_URL = $url
