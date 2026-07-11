@@ -52,15 +52,33 @@ services:
         value: ${APP_URL}
         scope: RUN_TIME
       - key: VERITY_PAIRING_SECRET
+        value: "__VERITY_PAIRING_SECRET__"
         scope: RUN_TIME
         type: SECRET
       - key: VAPID_PUBLIC_KEY
+        value: "__VAPID_PUBLIC_KEY__"
         scope: RUN_TIME
       - key: VAPID_PRIVATE_KEY
+        value: "__VAPID_PRIVATE_KEY__"
         scope: RUN_TIME
         type: SECRET
       - key: VAPID_SUBJECT
+        value: "__VAPID_SUBJECT__"
         scope: RUN_TIME
+      - key: VERITY_STT_API_KEY
+        value: "__VERITY_STT_API_KEY__"
+        scope: RUN_TIME
+        type: SECRET
+      - key: VERITY_STT_MODEL
+        value: nova-3
+        scope: RUN_TIME
+      - key: VERITY_GRADIENT_AGENT_ENDPOINT
+        value: "__VERITY_GRADIENT_AGENT_ENDPOINT__"
+        scope: RUN_TIME
+      - key: VERITY_GRADIENT_AGENT_KEY
+        value: "__VERITY_GRADIENT_AGENT_KEY__"
+        scope: RUN_TIME
+        type: SECRET
 jobs:
   - name: migrate
     github:

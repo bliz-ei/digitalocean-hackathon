@@ -24,7 +24,8 @@
     "phase0:push": "node phase0/probes/push/server.mjs",
     "phase0:vapid": "web-push generate-vapid-keys --json",
     "preflight": "node scripts/run-python.mjs scripts/preflight.py",
-    "preflight:release": "node scripts/run-python.mjs scripts/preflight.py --release"
+    "preflight:release": "node scripts/run-python.mjs scripts/preflight.py --release",
+    "deploy:prepare": "node scripts/run-python.mjs scripts/prepare_deploy.py"
   },
   "engines": {
     "node": ">=20"

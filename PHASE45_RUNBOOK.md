@@ -7,6 +7,17 @@
 - `VERITY_PAIRING_SECRET`: at least 32 random characters.
 - `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: one matching Web Push key pair.
 - `VAPID_SUBJECT`: a `mailto:` or HTTPS contact.
+- `VERITY_STT_API_KEY`: a Deepgram key required by the production deploy command. At runtime,
+  missing or failed Deepgram connectivity degrades to the disclosed recorded fixture;
+  `VERITY_STT_MODEL` overrides the default `nova-3`.
+- `VERITY_STT=recorded` (demo kill-switch: forces the recorded fixture even when the Deepgram key is set. With a key set and no kill-switch, a failed Deepgram connect degrades to the recorded fixture automatically; `/readyz` then reports `"stt": "recorded"` and claims carry `fixture_mode=true`.)
+- `VERITY_GRADIENT_AGENT_ENDPOINT` and `VERITY_GRADIENT_AGENT_KEY`: the Gradient agent
+  endpoint URL and access key. When set, evidence collection uses the agent (PDF knowledge
+  base first, web-search tool fallback) with automatic degrade to the recorded fixture on
+  failure; `/readyz` reports the active collector under `"evidence"`. The agent's knowledge
+  base documents are listed in `fixtures/gradient-kb.json`.
+- `VERITY_EVIDENCE=recorded` (demo kill-switch: forces recorded evidence even when the
+  Gradient agent is configured.)
 
 The App Platform spec binds the public app URL into both `VITE_API_URL` and
 `VERITY_ALLOWED_ORIGINS`. Its pre-deploy job applies each migration exactly once and rejects
@@ -14,12 +25,17 @@ edited migrations that have already been applied.
 
 ## Deploy
 
-1. Merge the release PR to `main`.
-2. Create or update the App Platform app from `infra/app.yaml` and provide the four secrets/settings above.
-3. Confirm the `migrate` pre-deploy job succeeds before the API and PWA become healthy.
-4. Set `VERITY_HEALTH_URL` to the deployed app URL and run `npm run preflight:release`.
-5. Build the unpacked Chrome extension with the same app URL:
-   `VITE_API_URL=https://<app-host> npm run build -w @verity/extension`.
+1. Merge the release PRs to `main`, grant DigitalOcean's GitHub app access to this repository once,
+   and install `doctl`.
+2. Set `DIGITALOCEAN_ACCESS_TOKEN`, then run:
+   `./scripts/deploy.ps1 -VapidSubject mailto:<team-contact>`.
+3. Save the printed app ID as `VERITY_APP_ID`; rerunning the command then updates the same app.
+4. Confirm the `migrate` pre-deploy job succeeds before the API and PWA become healthy.
+
+The command generates and locally persists one stable pairing secret and VAPID key pair under the
+gitignored `.verity/` directory, renders a secret-bearing spec there, deploys it, builds the Chrome
+extension against the deployed URL, and runs the strict release preflight. Never rotate or delete
+`.verity/deploy-secrets.json` after users subscribe unless you intend to pair them again.
 
 ## Three-run demo rehearsal
 

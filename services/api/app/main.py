@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from app.domain.models import (
@@ -27,7 +28,8 @@ from app.pipeline.live import LiveSession
 from app.pipeline.evidence import EvidencePipeline
 from app.providers.evidence import configured_evidence_providers
 from app.providers.fakes import FakeProviders
-from app.providers.live import RecordedSttAdapter, configured_fast_classifier
+from app.providers.live import configured_fast_classifier, configured_stt
+from app.readiness import readiness_checks
 from app.cross_device import (
     PairingCreate,
     PairingRedeem,
@@ -47,7 +49,8 @@ repo = (
 providers = FakeProviders()
 live_sessions: dict[str, LiveSession] = {}
 team_classifier = configured_fast_classifier()
-search_provider, page_fetcher, team_reasoner = configured_evidence_providers()
+stt_adapter = configured_stt()
+evidence_collector, team_reasoner = configured_evidence_providers()
 cross_device = configured_cross_device()
 app = FastAPI(title="Verity API", version="0.5.0")
 allowed_origins = [value.strip() for value in os.getenv("VERITY_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if value.strip()]
@@ -77,15 +80,14 @@ def health():
 
 @app.get("/readyz")
 def ready():
-    return {
-        "status": "ready",
-        "repository": mode,
-        "stt": "recorded",
-        "classifier": team_classifier.name,
-        "search": search_provider.name,
-        "reasoner": team_reasoner.name,
-        "push": "configured" if os.getenv("VAPID_PUBLIC_KEY") else "disabled",
-    }
+    ok, body = readiness_checks(mode, repo)
+    body["stt"] = stt_adapter.name
+    body["classifier"] = team_classifier.name
+    body["evidence"] = evidence_collector.name
+    body["reasoner"] = team_reasoner.name
+    if not ok:
+        return JSONResponse(status_code=503, content=body)
+    return body
 
 
 @app.post("/v1/sessions", response_model=SessionCreated, status_code=201)
@@ -211,7 +213,14 @@ async def stream(ws: WebSocket, session_id: str):
                 async def emit_fixture(value: Claim):
                     await send("claim_state", {"public_id": value.public_id, "state": value.state})
 
-                await run_hero(session_id, repo, providers, emit_fixture)
+                completed = await run_hero(session_id, repo, providers, emit_fixture)
+                if completed.verdict:
+                    await __import__("asyncio").to_thread(
+                        cross_device.notify,
+                        session_id,
+                        completed.public_id,
+                        completed.verdict.explanation,
+                    )
                 continue
             if not _authenticated(ws, session_id):
                 await send("error", {"code": "unauthorized"}, env.sequence)
@@ -231,8 +240,7 @@ async def stream(ws: WebSocket, session_id: str):
                         await __import__("asyncio").to_thread(cross_device.notify, completed_claim.session_id, completed_claim.public_id, summary)
                     evidence = EvidencePipeline(
                         repository=repo,
-                        search=search_provider,
-                        fetcher=page_fetcher,
+                        collector=evidence_collector,
                         reasoner=None if dispatch_mode == "client" else team_reasoner,
                         emit=send,
                         on_complete=notify_completed,
@@ -240,7 +248,7 @@ async def stream(ws: WebSocket, session_id: str):
                     runtime = LiveSession(
                         session_id=session_id,
                         repository=repo,
-                        stt_adapter=RecordedSttAdapter(),
+                        stt_adapter=stt_adapter,
                         classifier=None if dispatch_mode == "client" else team_classifier,
                         emit=send,
                         evidence_pipeline=evidence,
@@ -248,7 +256,13 @@ async def stream(ws: WebSocket, session_id: str):
                     live_sessions[session_id] = runtime
                 else:
                     runtime.emit = send
-                await runtime.start(stream_id)
+                try:
+                    await runtime.start(stream_id)
+                except ValueError as error:
+                    if runtime.stt is None:
+                        live_sessions.pop(session_id, None)
+                    await send("error", {"code": "capture_start_failed", "detail": str(error)[:160]}, env.sequence)
+                    continue
                 await send("ack", {"watermark": runtime.ledger.watermark}, env.sequence)
             elif env.type == "audio_chunk":
                 if not runtime:

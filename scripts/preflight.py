@@ -23,17 +23,20 @@ for required in ("kind: PRE_DEPLOY", "python scripts/migrate.py", "value: ${APP_
     checks[f"app_spec:{required}"] = required in spec
 
 required_env = (
-    "VERITY_DATABASE_URL",
     "VERITY_PAIRING_SECRET",
     "VAPID_PUBLIC_KEY",
     "VAPID_PRIVATE_KEY",
     "VAPID_SUBJECT",
+    "VERITY_STT_API_KEY",
+    "VERITY_GRADIENT_AGENT_ENDPOINT",
+    "VERITY_GRADIENT_AGENT_KEY",
 )
 if args.release:
     for key in required_env:
         checks[f"env:{key}"] = bool(os.getenv(key))
     checks["pairing_secret_length"] = len(os.getenv("VERITY_PAIRING_SECRET", "")) >= 32
     checks["vapid_subject"] = os.getenv("VAPID_SUBJECT", "").startswith(("mailto:", "https://"))
+    checks["gradient_endpoint_https"] = os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", "").startswith("https://")
 
 health_url = os.getenv("VERITY_HEALTH_URL")
 if health_url:
@@ -44,6 +47,8 @@ if health_url:
             readiness.get("status") == "ready"
             and readiness.get("repository") == "postgres"
             and readiness.get("push") == "configured"
+            and readiness.get("stt") == "deepgram"
+            and readiness.get("evidence") == "gradient"
         )
     except Exception:
         checks["deployed_readiness"] = False

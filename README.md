@@ -44,6 +44,17 @@ VERITY_REASONING_MODEL=...
 
 The search adapter accepts a compact `{results:[{title,url,publisher,published_at,snippet}]}` response. URLs and redirects to local, private, link-local, credentialed, unsupported-scheme, or unsupported-port destinations are rejected. API keys, full page text, complete prompts, authorization headers, and provider bodies are not logged. Extension BYOK reasoning uses the same `verityProvider` key directly from the offscreen context; only its structured verdict draft is returned to Verity.
 
+## Live Gradient evidence
+
+Production uses a DigitalOcean Gradient agent with the checked-in knowledge-base manifest and web-search fallback. Set both server-side values before deployment:
+
+```sh
+VERITY_GRADIENT_AGENT_ENDPOINT=https://your-agent-endpoint
+VERITY_GRADIENT_AGENT_KEY=...
+```
+
+`scripts/deploy.ps1` requires these values, runs three live agent/KB smoke attempts, and release preflight fails unless `/readyz` reports `evidence: gradient`. Each smoke attempt must return verified support and counterevidence from at least two independent sources. The endpoint is configuration; the access key is rendered only into the ignored `.verity/app.yaml` deployment spec and is never committed.
+
 ## Verification
 
 ```sh

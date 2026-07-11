@@ -32,13 +32,14 @@ export async function classify(candidate: ClaimCandidate, config: ProviderConfig
 export async function synthesize(request: SynthesisRequest, config: ProviderConfig): Promise<VerdictDraft> {
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),7_000);
+  const reasoningModel=config.reasoningModel?.trim()||config.model;
   try{
     const response=await fetch(`${config.baseUrl.replace(/\/$/,"")}/v1/chat/completions`,{
       method:"POST",
       headers:{"authorization":`Bearer ${config.apiKey}`,"content-type":"application/json"},
       signal:controller.signal,
       body:JSON.stringify({
-        model:config.model,temperature:0,max_tokens:700,response_format:{type:"json_object"},
+        model:reasoningModel,temperature:0,max_tokens:700,response_format:{type:"json_object"},
         messages:[
           {role:"system",content:reasoningSystem},
           {role:"user",content:`CLAIM_DATA\n${JSON.stringify(request.claim)}\nEND_CLAIM_DATA\nEVIDENCE_DATA\n${JSON.stringify(request.evidence)}\nEND_EVIDENCE_DATA\nVALIDATION_ERRORS\n${JSON.stringify(request.validation_errors)}`},
@@ -48,7 +49,7 @@ export async function synthesize(request: SynthesisRequest, config: ProviderConf
     if(!response.ok)throw new Error(`Provider request failed (${response.status})`);
     const body=await response.json() as {choices?:Array<{message?:{content?:string}}>};
     const value=JSON.parse(body.choices?.[0]?.message?.content??"") as Partial<VerdictDraft>;
-    return validateVerdict({...value,claim_public_id:request.claim.public_id,model_provider:new URL(config.baseUrl).host,model_name:config.model,prompt_version:"phase3-v1"});
+    return validateVerdict({...value,claim_public_id:request.claim.public_id,model_provider:new URL(config.baseUrl).host,model_name:reasoningModel,prompt_version:"phase3-v1"});
   }finally{clearTimeout(timeout)}
 }
 

@@ -22,11 +22,14 @@ function Skeleton() {
 
 export function ClaimPage() {
   const { publicId = "" } = useParams();
+  // A verdict tapped from a push notification may not be committed yet, so poll the
+  // canonical claim up to 8 times (1.5s apart) before giving up. Offline stops early.
   const query = useQuery<Claim>({
     queryKey: ["claim", publicId],
     queryFn: () => api.getClaim(base, publicId),
     enabled: !!publicId,
-    retry: 1,
+    retry: (failureCount) => navigator.onLine && failureCount < 8,
+    retryDelay: 1500,
   });
 
   // On a successful load, record the claim into this device's local history.
@@ -41,7 +44,9 @@ export function ClaimPage() {
         {query.isLoading && (
           <section className="vy-status-card" role="status" aria-busy="true">
             <span className="vy-status-card__eyebrow">Verity</span>
-            <span className="vy-status-card__title">Loading verdict…</span>
+            <span className="vy-status-card__title">
+              {query.failureCount > 0 ? `Loading verdict… (${query.failureCount}/8)` : "Loading verdict…"}
+            </span>
             <Skeleton />
           </section>
         )}

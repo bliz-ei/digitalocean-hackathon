@@ -43,9 +43,9 @@ class SpeakerMapper:
 
     def map(self, provider_label: str) -> str:
         if provider_label not in self._labels:
-            if len(self._labels) == 2:
-                raise ValueError("Phase 2 supports exactly two speakers")
-            self._labels[provider_label] = "AB"[len(self._labels)]
+            if len(self._labels) == 26:
+                raise ValueError("speaker limit exceeded")
+            self._labels[provider_label] = chr(ord("A") + len(self._labels))
         return self._labels[provider_label]
 
 

@@ -18,9 +18,10 @@ describe("BYOK reasoning",()=>{
       claim:{public_id:"claim",session_id:"session",speaker_label:"Speaker A",exact_text:"Claim.",normalized_text:"Claim",start_ms:1,end_ms:2,classification:"factual_claim",state:"SYNTHESIZING",created_at:new Date().toISOString(),completed_at:null,fixture_mode:false},
       evidence:[],validation_errors:[],attempt:1,prompt_version:"phase3-v1",
     } satisfies SynthesisRequest;
-    const result=await synthesize(request,{baseUrl:"https://api.openai.com",apiKey:"secret",model:"reasoning"});
-    expect(result).toMatchObject({claim_public_id:"claim",prompt_version:"phase3-v1",citation_ids:["a","b"]});
+    const result=await synthesize(request,{baseUrl:"https://api.openai.com",apiKey:"secret",model:"fast-model",reasoningModel:"reasoning-model"});
+    expect(result).toMatchObject({claim_public_id:"claim",prompt_version:"phase3-v1",citation_ids:["a","b"],model_name:"reasoning-model"});
     const call=vi.mocked(fetch).mock.calls[0];
     expect(String(call[1]?.body)).not.toContain("secret");
+    expect(JSON.parse(String(call[1]?.body)).model).toBe("reasoning-model");
   });
 });

@@ -2,6 +2,7 @@
   "name": "Verity",
   "short_name": "Verity",
   "description": "Evidence-backed verdicts, pushed to your phone.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

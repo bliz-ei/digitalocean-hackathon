@@ -1,0 +1,18 @@
+{
+  "knowledge_base": "verity-hero-kb",
+  "note": "Documents uploaded to the Gradient knowledge base. The agent is instructed to cite these exact URLs and titles for kb items so backend URL canonicalization, source tiers, and independence keys apply unchanged.",
+  "documents": [
+    {
+      "title": "Electric Vehicle Myths",
+      "publisher": "US EPA",
+      "url": "https://www.epa.gov/greenvehicles/electric-vehicle-myths",
+      "retrieval_names": ["epa-electric-vehicle-myths.pdf", "Electric Vehicle Myths.pdf"]
+    },
+    {
+      "title": "A global comparison of the life-cycle greenhouse gas emissions of combustion engine and electric passenger cars",
+      "publisher": "ICCT",
+      "url": "https://theicct.org/publication/a-global-comparison-of-the-life-cycle-greenhouse-gas-emissions-of-combustion-engine-and-electric-passenger-cars",
+      "retrieval_names": ["icct-lifecycle-ghg-passenger-cars.pdf", "A global comparison of the life-cycle greenhouse gas emissions of combustion engine and electric passenger cars.pdf"]
+    }
+  ]
+}
