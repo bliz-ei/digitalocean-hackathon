@@ -51,7 +51,9 @@ export const overlayCss=`
 .vy-ov__alert{font-size:var(--type-body-sm-size);line-height:var(--type-body-sm-line);color:var(--color-accent-red)}
 .vy-ov__caret{margin-left:auto;color:var(--color-mute);font-size:var(--type-caption-md-size)}
 .vy-ov-card .vy-verdict-card{margin:0;max-width:100%;padding:var(--space-lg)}
-.vy-ov-pill{display:inline-flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm) var(--space-md);border:1px solid var(--color-hairline);border-radius:var(--rounded-full);background:var(--color-surface);color:var(--color-body);cursor:pointer;font-family:var(--font-sans);font-feature-settings:var(--font-feature-body)}
+/* Collapsed pill: glass treatment supplied by the reusable .vy-glass class (see components.css).
+   .vy-ov-pill only owns layout + shape + hover so it never overrides the glass fill/shadow. */
+.vy-ov-pill{display:inline-flex;align-items:center;gap:var(--space-sm);padding:var(--space-sm) var(--space-md);border-radius:var(--rounded-full);color:var(--color-body);cursor:pointer;font-family:var(--font-sans);font-feature-settings:var(--font-feature-body)}
 .vy-ov-pill:hover{border-color:var(--color-hairline-strong)}
 `;
 
@@ -100,13 +102,13 @@ export function Overlay({state}:{state?:OverlayState}){
   const status=deriveStatus(state);
 
   if(collapsed){
-    return <button type="button" className="vy-ov-pill" onClick={()=>setCollapsed(false)} aria-label="Expand Verity">
+    return <button type="button" className="vy-glass vy-ov-pill" onClick={()=>setCollapsed(false)} aria-label="Expand Verity">
       <VerityMark size={20}/>
       <StatusChip state={status}/>
     </button>;
   }
 
-  return <div className="vy-palette vy-ov-card">
+  return <div className="vy-palette vy-palette--glass vy-ov-card">
     <header className="vy-ov__head">
       <VerityMark size={24}/>
       <StatusChip state={status}/>

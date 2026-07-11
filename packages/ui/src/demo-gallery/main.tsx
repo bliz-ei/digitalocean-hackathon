@@ -47,7 +47,7 @@ function Gallery(){
     <header style={{display:"flex",flexDirection:"column",gap:"var(--space-lg)"}}>
       <VerityWordmark/>
       <h1 className="vy-display-lg">Verity Design System</h1>
-      <p className="vy-body-lg" style={{color:"var(--color-body)",maxWidth:640}}>Every component in every state. Raycast-derived, single dark surface, Inter with ss03, no drop shadows.</p>
+      <p className="vy-body-lg" style={{color:"var(--color-body)",maxWidth:640}}>Every component in every state. Verity Glass — light canvas, frosted-glass floating surfaces, Inter with ss03; shadows only on glass.</p>
     </header>
 
     <Section title="Brand mark">
@@ -112,6 +112,22 @@ function Gallery(){
           <PaletteRow icon={<VerityMark size={20}/>} label="Start live listening"/>
           <PaletteRow icon={<VerityMark size={20}/>} label="Run disclosed fixture demo" keycap={<Keycap>⌘ D</Keycap>}/>
         </PaletteCard>
+      </div>
+    </Section>
+
+    <Section title="Glass palette over content (frosted)">
+      <div style={{
+        position:"relative",width:"100%",maxWidth:760,borderRadius:"var(--rounded-xl)",overflow:"hidden",
+        padding:"var(--space-section) var(--space-xl)",display:"flex",justifyContent:"center",
+        background:"conic-gradient(from 210deg at 30% 20%, #ffd5c2, #c9e0ff, #d8f5e6, #ffe8b0, #f3d4ff, #ffd5c2)"
+      }}>
+        <div style={{width:360}}>
+          <PaletteCard title="Verity" dots glass>
+            <PaletteRow icon={<VerityMark size={20}/>} label="Check the current claim" keycap={<Keycap>⏎</Keycap>} active/>
+            <PaletteRow icon={<VerityMark size={20}/>} label="Start live listening"/>
+            <PaletteRow icon={<VerityMark size={20}/>} label="Run disclosed fixture demo" keycap={<Keycap>⌘ D</Keycap>}/>
+          </PaletteCard>
+        </div>
       </div>
     </Section>
 

@@ -209,6 +209,8 @@
   overflow: hidden;
 }
 .vy-tile--lg { width: 64px; height: 64px; }
+/* Brand tile: deep-ink app-icon anchor (v2 §3) — deep ink bg, white glyph via currentColor. */
+.vy-tile--brand { background: var(--color-primary); border-color: var(--color-hairline-strong); color: var(--color-on-primary); }
 
 /* ============================ PillTab ============================ */
 .vy-pill {
@@ -266,6 +268,26 @@
   color: var(--color-accent-red);
 }
 
+/* ============================ Glass tier (floating surfaces only) ============================ */
+/* Translucent white + backdrop blur + inner light border (top-edge highlight via inset
+   box-shadow) + outer hairline + float shadow. Only for surfaces that float OVER other
+   content: overlay palette, hero mockup panel, sticky nav, collapsed pill. Fallback to the
+   denser glass-bg-strong where backdrop-filter is unsupported. */
+.vy-glass {
+  background: var(--color-glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-float), inset 0 0 0 1px var(--color-glass-border);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vy-glass { background: var(--color-glass-bg-strong); }
+}
+@media (max-width: 480px) {
+  /* Drop blur radius at mobile for performance (DESIGN.md Responsive). */
+  .vy-glass { -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%); }
+}
+
 /* ============================ PaletteCard / PaletteRow ============================ */
 .vy-palette {
   display: flex;
@@ -275,6 +297,24 @@
   border-radius: var(--rounded-lg);
   overflow: hidden;
 }
+/* Glass variant — floating command palette / overlay. Opaque .vy-palette stays for flat in-page use. */
+.vy-palette--glass {
+  background: var(--color-glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-color: var(--color-hairline);
+  border-radius: var(--rounded-xl);
+  box-shadow: var(--shadow-float), inset 0 0 0 1px var(--color-glass-border);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .vy-palette--glass { background: var(--color-glass-bg-strong); }
+}
+@media (max-width: 480px) {
+  .vy-palette--glass { -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%); }
+}
+/* On glass, row hover/active uses a faint ink wash so translucency shows through (DESIGN.md). */
+.vy-palette--glass .vy-row--active,
+.vy-palette--glass .vy-row:hover { background: var(--color-hairline-soft); }
 .vy-palette__header {
   display: flex;
   align-items: center;

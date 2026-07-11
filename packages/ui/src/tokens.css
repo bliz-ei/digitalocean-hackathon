@@ -1,49 +1,72 @@
-/* Verity design tokens — Raycast-derived. Every value here is the single source of truth.
+/* Verity design tokens — "Verity Glass" v2 (light mode + frosted glass). Every value
+   here is the single source of truth. Token NAMES are unchanged from v1 so component CSS
+   keys stay stable; VALUES are the v2 light remap per DESIGN.md.
    Declared on both :root (page context) and :host (Shadow DOM overlay). */
 :root,
 :host {
-  /* ---- Color: brand & primary ---- */
-  --color-primary: #ffffff;
-  --color-primary-pressed: #e8e8e8;
-  --color-on-primary: #000000;
+  /* ---- Color: brand & primary (dark ink pill CTA — the only deep-ink surfaces) ---- */
+  --color-primary: #0b0c0e;
+  --color-primary-pressed: #26282b;
+  --color-on-primary: #ffffff;
 
-  /* ---- Color: surface ladder ---- */
-  --color-canvas: #07080a;
-  --color-surface: #0d0d0d;
-  --color-surface-elevated: #101111;
-  --color-surface-card: #121212;
-  --color-button-fg: #18191a;
+  /* ---- Color: surface ladder (light) ---- */
+  --color-canvas: #fbfbfc;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f4f5f7;
+  --color-surface-card: #eef0f2;
+  --color-button-fg: #e9ebee;
 
-  /* ---- Color: hairlines ---- */
-  --color-hairline: #242728;
-  --color-hairline-soft: rgba(255, 255, 255, 0.08);
-  --color-hairline-strong: rgba(255, 255, 255, 0.16);
+  /* ---- Color: hairlines (ink-alpha on light) ---- */
+  --color-hairline: rgba(9, 10, 12, 0.08);
+  --color-hairline-soft: rgba(9, 10, 12, 0.05);
+  --color-hairline-strong: rgba(9, 10, 12, 0.16);
 
-  /* ---- Color: text ---- */
-  --color-ink: #f4f4f6;
-  --color-body: #cdcdcd;
-  --color-charcoal: #d3d3d4;
-  --color-mute: #9c9c9d;
-  --color-ash: #6a6b6c;
-  --color-stone: #434345;
-  --color-on-dark: #ffffff;
-  --color-on-dark-mute: rgba(255, 255, 255, 0.72);
+  /* ---- Color: text (ink on light) ---- */
+  --color-ink: #0b0c0e;
+  --color-body: #3f4247;
+  --color-charcoal: #26282b;
+  --color-mute: #6f7377;
+  --color-ash: #9a9da1;
+  --color-stone: #c3c6c9;
+  /* on-dark: renamed meaning — primary interactive text on light chrome (labels, active tabs, links). */
+  --color-on-dark: #0b0c0e;
+  --color-on-dark-mute: rgba(11, 12, 14, 0.66);
 
-  /* ---- Color: semantic accents (chips/illustrations only) ---- */
-  --color-accent-blue: #57c1ff;
-  --color-accent-blue-soft: rgba(87, 193, 255, 0.15);
-  --color-accent-red: #ff6161;
-  --color-accent-red-soft: rgba(255, 97, 97, 0.15);
-  --color-accent-green: #59d499;
-  --color-accent-green-soft: rgba(89, 212, 153, 0.15);
-  --color-accent-yellow: #ffc533;
-  --color-accent-yellow-soft: rgba(255, 197, 51, 0.15);
+  /* ---- Color: glass tier (floating surfaces only) ---- */
+  --color-glass-bg: rgba(255, 255, 255, 0.66);
+  --color-glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --color-glass-border: rgba(255, 255, 255, 0.55);
 
-  /* ---- Color: brand gradients ---- */
+  /* ---- Shadows (glass/floating panels ONLY — flat cards stay shadowless) ---- */
+  --shadow-float: 0 12px 40px rgba(9, 10, 12, 0.1);
+  --shadow-soft: 0 2px 12px rgba(9, 10, 12, 0.06);
+
+  /* ---- Color: semantic accents (chips/illustrations only — text values deepened for AA
+     4.5:1 on the tinted soft backgrounds across white/canvas/surface-elevated/surface-card) ---- */
+  --color-accent-blue: #0a69ab;
+  --color-accent-blue-soft: rgba(87, 193, 255, 0.18);
+  --color-accent-red: #b33232;
+  --color-accent-red-soft: rgba(255, 97, 97, 0.16);
+  --color-accent-green: #0c7543;
+  --color-accent-green-soft: rgba(89, 212, 153, 0.18);
+  --color-accent-yellow: #915c00;
+  --color-accent-yellow-soft: rgba(255, 197, 51, 0.22);
+
+  /* ---- Color: brand gradients & ambient washes ---- */
   --color-hero-stripe-start: #ff5757;
   --color-hero-stripe-end: #a1131a;
-  --color-key-bg-start: #121212;
-  --color-key-bg-end: #0d0d0d;
+  --color-key-bg-start: #f7f8fa;
+  --color-key-bg-end: #eceef1;
+
+  /* Hero wash — soft red-coral atmospheric gradient (aside-style diffuse) over light base.
+     Dominant use once per page in the hero band; faint echo allowed in the closing CTA band. */
+  --wash-hero:
+    radial-gradient(ellipse 78% 62% at 50% -6%, rgba(255, 87, 87, 0.18), rgba(255, 87, 87, 0) 62%),
+    radial-gradient(ellipse 56% 48% at 82% 10%, rgba(161, 19, 26, 0.12), rgba(161, 19, 26, 0) 68%),
+    radial-gradient(ellipse 60% 50% at 12% 4%, rgba(255, 87, 87, 0.1), rgba(255, 87, 87, 0) 66%);
+  --wash-hero-echo:
+    radial-gradient(ellipse 80% 70% at 50% 120%, rgba(255, 87, 87, 0.1), rgba(255, 87, 87, 0) 64%),
+    radial-gradient(ellipse 50% 46% at 78% 108%, rgba(161, 19, 26, 0.07), rgba(161, 19, 26, 0) 70%);
 
   /* ---- Spacing (base 8px, tight 2/4/12) ---- */
   --space-xxs: 2px;

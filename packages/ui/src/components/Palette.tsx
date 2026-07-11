@@ -1,7 +1,7 @@
 import type {ReactNode} from "react";
 
-export function PaletteCard({title,dots=false,children}:{title?:string;dots?:boolean;children:ReactNode}){
-  return <div className="vy-palette">
+export function PaletteCard({title,dots=false,glass=false,children}:{title?:string;dots?:boolean;glass?:boolean;children:ReactNode}){
+  return <div className={`vy-palette${glass?" vy-palette--glass":""}`}>
     {(title||dots)&&<div className="vy-palette__header">
       {dots&&<span className="vy-palette__dots"><span className="vy-palette__dot"/><span className="vy-palette__dot"/><span className="vy-palette__dot"/></span>}
       {title&&<span className="vy-palette__title">{title}</span>}

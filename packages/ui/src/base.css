@@ -1,5 +1,5 @@
-/* Verity base layer — dark canvas defaults, Inter with ss03, focus + reduced-motion.
-   No drop shadows anywhere in the system: depth is the surface ladder only. */
+/* Verity base layer — light canvas defaults, Inter with ss03, focus + reduced-motion.
+   Depth is the surface ladder + hairlines; shadows exist ONLY on floating/glass panels. */
 
 .vy-root,
 :host {
