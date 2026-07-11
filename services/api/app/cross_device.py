@@ -174,7 +174,9 @@ class MemoryCrossDeviceStore:
 
     def cleanup(self, cutoff: datetime) -> None:
         with self.lock:
-            self.challenges = {key: value for key, value in self.challenges.items() if value.expires_at > cutoff and not value.redeemed_device_id}
+            expired = [key for key, value in self.challenges.items() if value.expires_at <= cutoff or value.redeemed_device_id]
+            for key in expired:
+                del self.challenges[key]
 
 
 class PostgresCrossDeviceStore:
@@ -192,9 +194,12 @@ class PostgresCrossDeviceStore:
 
     def redeem(self, code_hash: str | None, token_hash: str | None, label: str, device_id: str, device_token_hash: str) -> Device:
         with self._connect() as db, db.transaction():
-            row = db.execute("""SELECT id,session_id,expires_at,attempts,redeemed_device_id FROM pairing_challenges
-                WHERE (%s IS NOT NULL AND code_hash=%s) OR (%s IS NOT NULL AND token_hash=%s) FOR UPDATE""",
-                (code_hash, code_hash, token_hash, token_hash)).fetchone()
+            if code_hash:
+                row = db.execute("""SELECT id,session_id,expires_at,attempts,redeemed_device_id
+                    FROM pairing_challenges WHERE code_hash=%s FOR UPDATE""", (code_hash,)).fetchone()
+            else:
+                row = db.execute("""SELECT id,session_id,expires_at,attempts,redeemed_device_id
+                    FROM pairing_challenges WHERE token_hash=%s FOR UPDATE""", (token_hash,)).fetchone()
             if not row:
                 raise ValueError("pairing not found")
             challenge_id, session_id, expires_at, attempts, redeemed = row
