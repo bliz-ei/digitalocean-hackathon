@@ -3,9 +3,6 @@ from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 
 from app.domain.evidence import (
-    UnsafeUrl,
-    build_evidence,
-    canonicalize_url,
     credible_independent_count,
     select_evidence,
     validate_draft,
@@ -15,15 +12,13 @@ from app.domain.models import (
     ClaimState,
     ClassificationResult,
     EvidenceRecord,
-    SearchResult,
-    SearchRole,
     Verdict,
     VerdictDraft,
     VerdictLabel,
     utcnow,
 )
 from app.persistence.repository import Repository
-from app.providers.evidence import PageFetcher, ReasoningModel, SearchAdapter
+from app.providers.evidence import EvidenceCollector, ReasoningModel
 from app.domain.state import transition
 
 
@@ -40,12 +35,11 @@ class PendingSynthesis:
 @dataclass
 class EvidencePipeline:
     repository: Repository
-    search: SearchAdapter
-    fetcher: PageFetcher
+    collector: EvidenceCollector
     reasoner: ReasoningModel | None
     emit: EventSink
     on_complete: Callable[[Claim], Awaitable[None]] | None = None
-    stage_timeout: float = 10.0
+    stage_timeout: float = 25.0
     synthesis_timeout: float = 7.0
     pending: dict[str, PendingSynthesis] = field(default_factory=dict)
     running: set[str] = field(default_factory=set)
@@ -55,7 +49,7 @@ class EvidencePipeline:
             return self.repository.get_claim(claim.public_id) or claim
         self.running.add(claim.public_id)
         try:
-            records = await asyncio.wait_for(self._evidence(classification, claim), timeout=self.stage_timeout)
+            records = await asyncio.wait_for(self.collector.collect(claim, classification), timeout=self.stage_timeout)
             selected = select_evidence(records)
             claim.evidence = [item.evidence for item in selected]
             if credible_independent_count(selected) < 2:
@@ -120,51 +114,6 @@ class EvidencePipeline:
             pending.evidence,
             "The reasoning response failed deterministic citation validation.",
         )
-
-    async def _evidence(self, classification: ClassificationResult, claim: Claim) -> list[EvidenceRecord]:
-        queries = [
-            (SearchRole.neutral, item) for item in classification.neutral_queries[:2]
-        ] + [
-            (SearchRole.support, item) for item in classification.support_queries[:2]
-        ] + [
-            (SearchRole.counter, item) for item in classification.counter_queries[:2]
-        ]
-        groups = await asyncio.gather(
-            *(self._search_with_retry(query, role) for role, query in queries),
-            return_exceptions=True,
-        )
-        candidates: list[SearchResult] = []
-        seen: set[str] = set()
-        for group in groups:
-            if isinstance(group, BaseException):
-                continue
-            for item in group:
-                try:
-                    url = canonicalize_url(str(item.url))
-                except UnsafeUrl:
-                    continue
-                if url not in seen:
-                    seen.add(url)
-                    candidates.append(item.model_copy(update={"url": url}))
-        fetched = await asyncio.gather(
-            *(self._fetch(item, claim) for item in candidates[:9]),
-            return_exceptions=True,
-        )
-        return [item for item in fetched if isinstance(item, EvidenceRecord)]
-
-    async def _search_with_retry(self, query: str, role: SearchRole) -> list[SearchResult]:
-        for attempt in range(2):
-            try:
-                return await asyncio.wait_for(self.search.search(query, role, 3), timeout=4)
-            except (TimeoutError, ValueError):
-                if attempt:
-                    raise
-                await asyncio.sleep(0.05)
-        return []
-
-    async def _fetch(self, result: SearchResult, claim: Claim) -> EvidenceRecord:
-        page = await asyncio.wait_for(self.fetcher.fetch(str(result.url)), timeout=5)
-        return build_evidence(claim, result, page)
 
     async def _request_client(self, pending: PendingSynthesis, errors: Sequence[str]) -> None:
         await self.emit(

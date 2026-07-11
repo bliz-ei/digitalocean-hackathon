@@ -1,7 +1,7 @@
 from app.domain.models import Claim, ClaimState, ClassificationResult
 from app.domain.state import transition
 from app.pipeline.evidence import EvidencePipeline
-from app.providers.evidence import RecordedEvidenceProvider
+from app.providers.evidence import RecordedEvidenceProvider, SearchEvidenceCollector
 
 
 async def run_hero(session_id, repository, providers, emit):
@@ -37,6 +37,6 @@ async def run_hero(session_id, repository, providers, emit):
         support_queries=["electric vehicle zero direct emissions"],
         counter_queries=["electric vehicle manufacturing lifecycle emissions"],
     )
-    completed = await EvidencePipeline(repository, recorded, recorded, recorded, relay).run(claim, result)
+    completed = await EvidencePipeline(repository, SearchEvidenceCollector(recorded, recorded), recorded, relay).run(claim, result)
     await providers.push(completed.public_id)
     return completed

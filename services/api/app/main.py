@@ -50,7 +50,7 @@ providers = FakeProviders()
 live_sessions: dict[str, LiveSession] = {}
 team_classifier = configured_fast_classifier()
 stt_adapter = configured_stt()
-search_provider, page_fetcher, team_reasoner = configured_evidence_providers()
+evidence_collector, team_reasoner = configured_evidence_providers()
 cross_device = configured_cross_device()
 app = FastAPI(title="Verity API", version="0.5.0")
 allowed_origins = [value.strip() for value in os.getenv("VERITY_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if value.strip()]
@@ -83,7 +83,7 @@ def ready():
     ok, body = readiness_checks(mode, repo)
     body["stt"] = stt_adapter.name
     body["classifier"] = team_classifier.name
-    body["search"] = search_provider.name
+    body["evidence"] = evidence_collector.name
     body["reasoner"] = team_reasoner.name
     if not ok:
         return JSONResponse(status_code=503, content=body)
@@ -240,8 +240,7 @@ async def stream(ws: WebSocket, session_id: str):
                         await __import__("asyncio").to_thread(cross_device.notify, completed_claim.session_id, completed_claim.public_id, summary)
                     evidence = EvidencePipeline(
                         repository=repo,
-                        search=search_provider,
-                        fetcher=page_fetcher,
+                        collector=evidence_collector,
                         reasoner=None if dispatch_mode == "client" else team_reasoner,
                         emit=send,
                         on_complete=notify_completed,

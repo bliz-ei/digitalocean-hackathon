@@ -11,6 +11,13 @@
   missing or failed Deepgram connectivity degrades to the disclosed recorded fixture;
   `VERITY_STT_MODEL` overrides the default `nova-3`.
 - `VERITY_STT=recorded` (demo kill-switch: forces the recorded fixture even when the Deepgram key is set. With a key set and no kill-switch, a failed Deepgram connect degrades to the recorded fixture automatically; `/readyz` then reports `"stt": "recorded"` and claims carry `fixture_mode=true`.)
+- `VERITY_GRADIENT_AGENT_ENDPOINT` and `VERITY_GRADIENT_AGENT_KEY`: the Gradient agent
+  endpoint URL and access key. When set, evidence collection uses the agent (PDF knowledge
+  base first, web-search tool fallback) with automatic degrade to the recorded fixture on
+  failure; `/readyz` reports the active collector under `"evidence"`. The agent's knowledge
+  base documents are listed in `fixtures/gradient-kb.json`.
+- `VERITY_EVIDENCE=recorded` (demo kill-switch: forces recorded evidence even when the
+  Gradient agent is configured.)
 
 The App Platform spec binds the public app URL into both `VITE_API_URL` and
 `VERITY_ALLOWED_ORIGINS`. Its pre-deploy job applies each migration exactly once and rejects
