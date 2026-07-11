@@ -1,9 +1,9 @@
-import { api, type Claim, type ClaimState, type TranscriptSegment } from "@verity/contracts";
+import { api, type Claim, type ClaimState, type PairingChallenge, type TranscriptSegment } from "@verity/contracts";
 import type { ProviderConfig } from "./classifier";
 import {apiBase as base,websocketBase} from "./config";
 
 const terminalStates = new Set<ClaimState>(["COMPLETE", "INSUFFICIENT_EVIDENCE", "FAILED"]);
-type OverlayState = { mode: "fixture" | "live"; connection: string; transcripts: TranscriptSegment[]; pairingCode?: string; pairingExpiresAt?: string; claim?: Claim; error?: string };
+type OverlayState = { mode: "fixture" | "live"; connection: string; transcripts: TranscriptSegment[]; sessionId?: string; pairingCode?: string; redemptionToken?: string; pairingExpiresAt?: string; claim?: Claim; error?: string };
 let fixtureSocket: WebSocket | undefined;
 
 chrome.runtime.onMessage.addListener((message, _sender, reply) => {
@@ -19,14 +19,28 @@ chrome.runtime.onMessage.addListener((message, _sender, reply) => {
     return true;
   }
   if (message.type === "STOP") { void stop().then(() => reply({ ok: true })); return true; }
+  if (message.type === "PAIR_PHONE") { void pairPhone().then((result) => reply(result)); return true; }
   if (message.type === "LIVE_EVENT") { void consume(message.event); reply({ ok: true }); }
 });
+
+/** Mint a fresh pairing challenge for the active session so the popup can render the
+ *  6-digit code + QR. Returns the full PairingChallenge or an error when no session
+ *  is running. Pure plumbing — the popup owns the UI. */
+async function pairPhone(): Promise<{ ok: true; challenge: PairingChallenge } | { ok: false; error: string }> {
+  const sessionId = (await current()).sessionId;
+  if (!sessionId) return { ok: false, error: "Start a session to pair your phone." };
+  try {
+    const challenge = await api.createPairing(base, sessionId);
+    await update({ pairingCode: challenge.code, redemptionToken: challenge.redemption_token, pairingExpiresAt: challenge.expires_at });
+    return { ok: true, challenge };
+  } catch (error) { return { ok: false, error: safeError(error) }; }
+}
 
 async function startFixture(): Promise<void> {
   fixtureSocket?.close();
   const session = await api.createSession(base);
   const pairing = await api.createPairing(base, session.id);
-  await update({ mode: "fixture", connection: "CONNECTING", transcripts: [], pairingCode: pairing.code, pairingExpiresAt: pairing.expires_at, claim: undefined, error: undefined });
+  await update({ mode: "fixture", connection: "CONNECTING", transcripts: [], sessionId: session.id, pairingCode: pairing.code, redemptionToken: pairing.redemption_token, pairingExpiresAt: pairing.expires_at, claim: undefined, error: undefined });
   const socketUrl = `${websocketBase()}/v1/sessions/${session.id}/stream`;
   await new Promise<void>((resolve, reject) => {
     const socket = new WebSocket(socketUrl);
@@ -72,7 +86,7 @@ async function startLive(): Promise<void> {
   const provider = validProvider(stored.verityProvider) ? stored.verityProvider : undefined;
   const response = await chrome.runtime.sendMessage({ type: "OFFSCREEN_START", streamId, sessionId: session.id, credential: session.credential, provider });
   if (!response?.ok) throw new Error(response?.error ?? "Unable to start tab capture.");
-  await update({ mode: "live", connection: "CONNECTING", transcripts: [], pairingCode: pairing.code, pairingExpiresAt: pairing.expires_at });
+  await update({ mode: "live", connection: "CONNECTING", transcripts: [], sessionId: session.id, pairingCode: pairing.code, redemptionToken: pairing.redemption_token, pairingExpiresAt: pairing.expires_at });
 }
 
 async function consume(event: { type: string; payload: Record<string, unknown> }): Promise<void> {

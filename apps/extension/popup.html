@@ -1,20 +1,13 @@
-<main style="width:320px;padding:14px;font:14px system-ui">
-  <h1 style="font-size:20px">Verity</h1>
-  <p id="status">Choose a mode. Capture starts only after your click.</p>
-  <p><button id="live">Start live listening</button> <button id="fixture">Demo fallback</button> <button id="stop">Stop</button></p>
-  <details>
-    <summary>BYOK settings</summary>
-    <label>Provider
-      <select id="provider"><option value="digitalocean">DigitalOcean</option><option value="openai">OpenAI</option></select>
-    </label><br>
-    <label>API key <input id="api-key" type="password" autocomplete="new-password" spellcheck="false"></label><br>
-    <label>Fast model <input id="fast-model" autocomplete="off"></label><br>
-    <label>Reasoning model <input id="reasoning-model" autocomplete="off"></label><br>
-    <label>Monthly guard ($) <input id="budget" type="number" min="0.10" step="0.10" value="10"></label><br>
-    <button id="test-provider">Test connection</button>
-    <button id="save-provider">Save locally</button>
-    <button id="delete-provider">Delete key</button>
-    <p id="provider-status" role="status"></p>
-    <small>Prototype keys stay in local extension storage and are sent only to the selected provider.</small>
-  </details>
-</main><script type="module" src="/src/popup.ts"></script>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verity</title>
+  <style>html,body{margin:0;width:360px;background:#07080a;color:#cdcdcd}</style>
+</head>
+<body>
+  <div id="verity-popup-root"></div>
+  <script type="module" src="/src/popup.tsx"></script>
+</body>
+</html>

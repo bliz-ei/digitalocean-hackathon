@@ -1,0 +1,42 @@
+/* Layout for the two full-page extension surfaces (popup + options). Every value is a
+   design token; component chrome comes from @verity/ui. These pages render on the dark
+   canvas inside a .vy-root wrapper (which supplies the canvas background + resets). */
+
+/* ============================ Popup — control strip ============================ */
+.vy-popup { display: flex; flex-direction: column; gap: var(--space-lg); padding: var(--space-lg); width: 100%; min-height: 100vh; box-sizing: border-box; }
+.vy-popup__top { display: flex; align-items: center; gap: var(--space-sm); }
+.vy-popup__spacer { flex: 1 1 auto; }
+.vy-popup__status { display: flex; align-items: center; gap: var(--space-sm); }
+.vy-popup__mode { font-size: var(--type-caption-sm-size); letter-spacing: var(--type-caption-sm-tracking); text-transform: uppercase; color: var(--color-mute); }
+.vy-popup__actions { display: flex; flex-direction: column; gap: var(--space-sm); }
+.vy-popup__demo { align-self: flex-start; background: transparent; color: var(--color-mute); min-height: unset; padding: var(--space-xs) 0; }
+.vy-popup__demo:active { background: transparent; color: var(--color-body); }
+.vy-popup__msg { font-size: var(--type-caption-md-size); line-height: var(--type-caption-md-line); letter-spacing: var(--type-caption-md-tracking); color: var(--color-mute); min-height: 1em; }
+.vy-btn--icon { min-height: 36px; width: 36px; padding: 0; border: 1px solid var(--color-hairline); }
+
+.vy-card { display: flex; flex-direction: column; gap: var(--space-sm); padding: var(--space-md); border: 1px solid var(--color-hairline); border-radius: var(--rounded-md); background: var(--color-surface); }
+.vy-card__row { display: flex; align-items: center; gap: var(--space-sm); }
+.vy-card__label { font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); letter-spacing: var(--type-body-sm-strong-tracking); color: var(--color-ink); }
+.vy-card__value { font-size: var(--type-body-sm-size); color: var(--color-body); }
+.vy-card__note { font-size: var(--type-caption-sm-size); line-height: var(--type-caption-sm-line); letter-spacing: var(--type-caption-sm-tracking); color: var(--color-mute); }
+.vy-linkbtn { display: inline-flex; align-items: center; gap: var(--space-xs); margin-left: auto; padding: var(--space-xs) var(--space-sm); border: none; border-radius: var(--rounded-sm); background: transparent; color: var(--color-on-dark); font-family: var(--font-sans); font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); font-feature-settings: var(--font-feature-body); cursor: pointer; }
+.vy-linkbtn:hover { background: var(--color-surface-elevated); }
+
+.vy-pair__code { display: flex; gap: var(--space-xs); }
+.vy-pair__code .vy-keycap { min-width: 30px; height: 42px; font-size: var(--type-heading-md-size); letter-spacing: 0; }
+.vy-pair__qr { display: block; width: 148px; height: 148px; border: 1px solid var(--color-hairline); border-radius: var(--rounded-md); background: #ffffff; padding: var(--space-sm); box-sizing: border-box; }
+.vy-pair__url { font-size: var(--type-caption-sm-size); line-height: var(--type-caption-sm-line); color: var(--color-mute); word-break: break-all; }
+
+/* ============================ Options — full BYOK form ============================ */
+.vy-options { max-width: 640px; margin: 0 auto; padding: var(--space-xxl) var(--space-xl); display: flex; flex-direction: column; gap: var(--space-xl); }
+.vy-options__head { display: flex; flex-direction: column; gap: var(--space-sm); }
+.vy-options__subtitle { font-size: var(--type-body-md-size); line-height: var(--type-body-md-line); color: var(--color-body); }
+.vy-options__form { display: flex; flex-direction: column; gap: var(--space-lg); padding: var(--space-xl); background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); }
+.vy-options__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
+.vy-options__select { min-height: 36px; padding: var(--space-sm) var(--space-md); background: var(--color-surface-elevated); border: 1px solid var(--color-hairline); border-radius: var(--rounded-md); color: var(--color-on-dark); font-family: var(--font-sans); font-size: var(--type-body-md-size); font-feature-settings: var(--font-feature-body); }
+.vy-options__select:focus { outline: none; border-color: var(--color-hairline-strong); }
+.vy-options__actions { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.vy-options__spacer { flex: 1 1 auto; }
+.vy-options__result { font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line); color: var(--color-mute); min-height: 1em; }
+.vy-options__note { font-size: var(--type-caption-md-size); line-height: var(--type-caption-md-line); letter-spacing: var(--type-caption-md-tracking); color: var(--color-mute); }
+@media (max-width: 520px) { .vy-options__grid { grid-template-columns: 1fr; } }
