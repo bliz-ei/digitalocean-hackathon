@@ -1,0 +1,212 @@
+/* Layout for the two full-page extension surfaces (popup + options). Every value is a
+   design token; component chrome comes from @verity/ui. These pages render on the light
+   canvas inside a .vy-root wrapper (which supplies the canvas background + resets).
+   Raycast structure (command-palette rows, hairlines, keycaps, tight density) fused with
+   aside.com's airy, frosted-glass premium feel: one wash + one glass panel per surface,
+   shadows only on the glass tier, everything else flat hairline cards on the surface ladder. */
+
+/* ============================ Popup — mini command palette ============================ */
+.vy-popup { display: flex; flex-direction: column; width: 100%; min-height: 100vh; box-sizing: border-box; background: var(--color-canvas); }
+
+/* Header strip — the single ambient wash of the surface (aside-style hero echo), hairline
+   base. Extra bottom padding leaves room for the glass hero to overlap into the wash. */
+.vy-popup__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-lg) var(--space-xxl);
+  background-image: var(--wash-hero);
+  background-color: var(--color-canvas);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.vy-popup__spacer { flex: 1 1 auto; }
+
+.vy-popup__body { display: flex; flex-direction: column; gap: var(--space-lg); padding: 0 var(--space-lg) var(--space-lg); }
+
+/* Session hero — glass panel that pulls up over the header wash so its frosted top edge
+   picks up the coral tint (a legitimate floating-glass moment). Owns layout + the pull-up;
+   the .vy-glass class supplies the fill, blur, inner highlight, and float shadow. */
+.vy-popup__hero {
+  position: relative;
+  z-index: 1;
+  margin-top: calc(-1 * var(--space-lg));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-radius: var(--rounded-xl);
+}
+.vy-popup__statusrow { display: flex; align-items: center; gap: var(--space-sm); }
+.vy-popup__mode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-left: auto;
+  padding: var(--space-xxs) var(--space-sm);
+  border-radius: var(--rounded-full);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface);
+  font-size: var(--type-caption-sm-size);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+.vy-popup__mode::before {
+  content: "";
+  width: var(--space-xs);
+  height: var(--space-xs);
+  border-radius: var(--rounded-full);
+  background: var(--color-ash);
+}
+.vy-popup__mode--live::before { background: var(--color-accent-green); }
+
+.vy-popup__actions { display: flex; flex-direction: column; gap: var(--space-sm); }
+.vy-popup__cta { width: 100%; min-height: 40px; border-radius: var(--rounded-md); }
+.vy-popup__demo {
+  align-self: center;
+  min-height: unset;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--color-mute);
+  font-size: var(--type-caption-md-size);
+}
+.vy-popup__demo:hover { color: var(--color-body); }
+.vy-popup__demo:active { background: transparent; color: var(--color-body); }
+.vy-popup__msg {
+  font-size: var(--type-caption-md-size);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-mute);
+  text-align: center;
+  min-height: 1em;
+}
+
+/* Square icon button — clean inline SVG cog, tertiary square with a hairline. */
+.vy-btn--icon {
+  min-height: 34px;
+  width: 34px;
+  padding: 0;
+  color: var(--color-charcoal);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+  background: var(--color-surface);
+}
+.vy-btn--icon:hover { background: var(--color-surface-elevated); color: var(--color-ink); border-color: var(--color-hairline-strong); }
+.vy-btn--icon:active { background: var(--color-surface-card); }
+
+/* Flat hairline cards on the surface ladder — no shadow (only the glass hero floats). */
+.vy-card { display: flex; flex-direction: column; gap: var(--space-md); padding: var(--space-md); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); background: var(--color-surface); }
+
+/* Command-palette row: icon tile + stacked label/sub + trailing chip or action. */
+.vy-rowitem { display: flex; align-items: center; gap: var(--space-md); }
+.vy-rowitem__text { display: flex; flex-direction: column; gap: var(--space-xxs); min-width: 0; flex: 1 1 auto; }
+.vy-rowitem__label { font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); letter-spacing: var(--type-body-sm-strong-tracking); color: var(--color-ink); }
+.vy-rowitem__sub { font-size: var(--type-caption-sm-size); line-height: var(--type-caption-sm-line); letter-spacing: var(--type-caption-sm-tracking); color: var(--color-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vy-card .vy-tile { flex: none; }
+.vy-rowitem > .vy-chip, .vy-rowitem > .vy-card__value, .vy-rowitem > .vy-linkbtn { flex: none; white-space: nowrap; }
+
+.vy-card__value { font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); color: var(--color-charcoal); flex: none; }
+.vy-card__note { font-size: var(--type-caption-sm-size); line-height: var(--type-caption-sm-line); letter-spacing: var(--type-caption-sm-tracking); color: var(--color-mute); }
+
+/* Trailing action chip button (Show/Hide pairing code). */
+.vy-linkbtn { display: inline-flex; align-items: center; gap: var(--space-xs); flex: none; padding: var(--space-xs) var(--space-md); border: 1px solid var(--color-hairline); border-radius: var(--rounded-full); background: var(--color-surface-elevated); color: var(--color-on-dark); font-family: var(--font-sans); font-size: var(--type-caption-md-size); font-weight: var(--type-body-sm-strong-weight); letter-spacing: var(--type-caption-md-tracking); font-feature-settings: var(--font-feature-body); cursor: pointer; }
+.vy-linkbtn:hover { background: var(--color-surface-card); border-color: var(--color-hairline-strong); }
+
+/* Pairing disclosure — keycaps, framed QR, url. */
+.vy-pair { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); padding-top: var(--space-xs); }
+.vy-pair__code { display: flex; gap: var(--space-sm); }
+.vy-pair__code .vy-keycap { min-width: 34px; height: 46px; font-size: var(--type-heading-md-size); letter-spacing: 0; }
+.vy-pair__qrframe { display: inline-flex; padding: var(--space-sm); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); background: var(--color-surface); }
+.vy-pair__qr { display: block; width: 148px; height: 148px; border-radius: var(--rounded-sm); background: #ffffff; }
+.vy-pair__url { align-self: stretch; font-size: var(--type-caption-sm-size); line-height: var(--type-caption-sm-line); color: var(--color-mute); word-break: break-all; text-align: center; }
+
+/* ============================ Options — polished BYOK settings screen ============================ */
+.vy-options { position: relative; max-width: 640px; margin: 0 auto; padding: var(--space-section) var(--space-xl) var(--space-xxl); display: flex; flex-direction: column; gap: var(--space-xl); }
+/* Single ambient wash for the page, full-bleed behind the header (aside-style hero echo). */
+.vy-options::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 340px;
+  background-image: var(--wash-hero);
+  pointer-events: none;
+  z-index: 0;
+}
+.vy-options > * { position: relative; z-index: 1; }
+
+.vy-options__head { display: flex; flex-direction: column; gap: var(--space-md); }
+.vy-options__eyebrow {
+  margin-top: var(--space-sm);
+  font-size: var(--type-caption-sm-size);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+.vy-options__title { max-width: 34ch; }
+.vy-options__subtitle { max-width: 56ch; font-size: var(--type-body-md-size); line-height: var(--type-body-md-line); color: var(--color-body); }
+
+.vy-options__form { display: flex; flex-direction: column; gap: var(--space-xl); padding: var(--space-xl); background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); }
+.vy-options__section { display: flex; flex-direction: column; gap: var(--space-lg); }
+.vy-options__section-label {
+  font-size: var(--type-caption-sm-size);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase;
+  color: var(--color-mute);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-hairline-soft);
+}
+.vy-options__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
+
+/* API key field reads as a credential — monospace input. */
+.vy-options__key .vy-field__input { font-family: var(--font-mono); letter-spacing: 0.2px; }
+
+/* Styled native select: surface-elevated fill, hairline, custom chevron. */
+.vy-select { position: relative; display: flex; }
+.vy-select__input {
+  width: 100%;
+  min-height: 36px;
+  padding: var(--space-sm) var(--space-xxl) var(--space-sm) var(--space-md);
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+  color: var(--color-on-dark);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-md-size);
+  font-feature-settings: var(--font-feature-body);
+  cursor: pointer;
+}
+.vy-select__input:hover { border-color: var(--color-hairline-strong); }
+.vy-select__input:focus { outline: none; border-color: var(--color-hairline-strong); }
+.vy-select__chevron { position: absolute; right: var(--space-md); top: 50%; transform: translateY(-50%); color: var(--color-mute); pointer-events: none; }
+
+.vy-options__actions { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.vy-options__spacer { flex: 1 1 auto; }
+/* Restrained destructive: monochrome by default, accent-red label only on hover. */
+.vy-options__delete { background: transparent; color: var(--color-mute); }
+.vy-options__delete:hover { background: var(--color-accent-red-soft); color: var(--color-accent-red); }
+.vy-options__delete:active { background: var(--color-accent-red-soft); }
+
+.vy-options__result { font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line); color: var(--color-mute); min-height: 1em; }
+.vy-options__result--ok { color: var(--color-accent-green); font-weight: var(--type-body-sm-strong-weight); }
+.vy-options__result--err { color: var(--color-accent-red); font-weight: var(--type-body-sm-strong-weight); }
+
+/* Trust callout — surface-elevated (flat, non-floating) with a lock glyph tile. */
+.vy-options__trust { display: flex; align-items: flex-start; gap: var(--space-md); padding: var(--space-lg); background: var(--color-surface-elevated); border: 1px solid var(--color-hairline); border-radius: var(--rounded-lg); }
+.vy-options__trust-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex: none; border-radius: var(--rounded-md); background: var(--color-surface); border: 1px solid var(--color-hairline); color: var(--color-ink); }
+.vy-options__trust-text { display: flex; flex-direction: column; gap: var(--space-xs); }
+.vy-options__trust-title { font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); letter-spacing: var(--type-body-sm-strong-tracking); color: var(--color-ink); }
+.vy-options__note { font-size: var(--type-caption-md-size); line-height: var(--type-caption-md-line); letter-spacing: var(--type-caption-md-tracking); color: var(--color-mute); }
+
+@media (max-width: 520px) {
+  .vy-options { padding-top: var(--space-xxl); }
+  .vy-options__grid { grid-template-columns: 1fr; }
+}

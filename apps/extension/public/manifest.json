@@ -1,1 +1,14 @@
-{"manifest_version":3,"name":"Verity","version":"0.5.0","minimum_chrome_version":"116","permissions":["storage","offscreen","tabCapture","activeTab"],"host_permissions":["http://localhost:8000/*","https://*.ondigitalocean.app/*","https://www.youtube.com/*","https://api.openai.com/*","https://inference.do-ai.run/*"],"background":{"service_worker":"worker.js","type":"module"},"action":{"default_popup":"popup.html"},"content_scripts":[{"matches":["https://www.youtube.com/*"],"js":["content.js"]}]}
+{
+  "manifest_version": 3,
+  "name": "Verity",
+  "version": "0.5.0",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "offscreen", "tabCapture", "activeTab"],
+  "host_permissions": ["http://localhost:8000/*", "https://*.ondigitalocean.app/*", "https://www.youtube.com/*", "https://api.openai.com/*", "https://inference.do-ai.run/*"],
+  "background": {"service_worker": "worker.js", "type": "module"},
+  "action": {"default_popup": "popup.html", "default_icon": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"}},
+  "icons": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"},
+  "options_ui": {"page": "options.html", "open_in_tab": true},
+  "content_scripts": [{"matches": ["https://www.youtube.com/*"], "js": ["content.js"]}],
+  "web_accessible_resources": [{"resources": ["Inter-latin.woff2"], "matches": ["https://www.youtube.com/*"]}]
+}

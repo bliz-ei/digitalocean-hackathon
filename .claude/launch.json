@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ui-gallery",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "@verity/ui"],
+      "port": 5173
+    },
+    {
+      "name": "pwa",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "@verity/pwa"],
+      "port": 5174
+    }
+  ]
+}
