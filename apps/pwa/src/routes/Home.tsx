@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "@verity/contracts";
 import { Button, TextInput, VerdictBadge, PaletteCard, PaletteRow } from "@verity/ui";
 import { AppHeader } from "../components/AppHeader";
+import { base } from "../lib/config";
 import { usePairing, redemptionToken } from "../lib/pairing";
 import { usePush } from "../lib/push";
 import { readHistory, relativeTime, isSubscribed, type ClaimHistoryEntry } from "../lib/history";
@@ -44,10 +46,25 @@ function HistoryList({ entries }: { entries: ClaimHistoryEntry[] }) {
 }
 
 export function Home() {
+  const navigate = useNavigate();
   const { device, status: pairStatus, code, setCode, pair } = usePairing();
   const { status: pushStatus, enableNotifications, disableNotifications } = usePush(device);
   const [history, setHistory] = useState<ClaimHistoryEntry[]>(() => readHistory());
   const [subscribed, setSubscribed] = useState<boolean>(() => isSubscribed());
+  const [fixtureStatus, setFixtureStatus] = useState("");
+
+  // Phone-initiated disclosed fixture demo: runs the checked-in fixture pipeline on the
+  // backend and opens its canonical verdict — the same path a real notification tap lands on.
+  async function fixtureDemo() {
+    setFixtureStatus("Starting disclosed demo fallback…");
+    try {
+      const session = await api.createSession(base);
+      const result = await api.startFixture(base, session.id);
+      navigate(`/claims/${encodeURIComponent(result.public_id)}`);
+    } catch {
+      setFixtureStatus("Demo fallback failed");
+    }
+  }
 
   // Auto-redeem when a ?pair= token is present in the URL and we are not yet paired.
   useEffect(() => {
@@ -113,6 +130,13 @@ export function Home() {
         )}
 
         <HistoryList entries={history} />
+
+        <section className="vy-status-card">
+          <span className="vy-status-card__eyebrow">Try it now</span>
+          <p className="vy-status-card__body vy-mute">Run the disclosed fixture demo to open a real cited verdict on this phone — the same page a notification tap lands on.</p>
+          <Button variant="tertiary" onClick={fixtureDemo}>Start fixture demo</Button>
+          {fixtureStatus && <p className="vy-status-card__body vy-mute" role="status">{fixtureStatus}</p>}
+        </section>
       </main>
     </div>
   );
