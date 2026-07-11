@@ -39,15 +39,16 @@ class FakeSocket:
 def connector_for(socket):
     async def connector(url, additional_headers):
         assert url.startswith("wss://api.deepgram.com/v1/listen?")
-        assert "diarize=true" in url
+        assert "diarize_model=latest" in url
+        assert "utterance_end_ms=1000" in url
         assert additional_headers["authorization"] == "Token secret"
         return socket
 
     return connector
 
 
-def result(text, start, duration, speaker=0, final=True):
-    words = [{"word": text.split()[0], "speaker": speaker}] if text else []
+def result(text, start, duration, speaker=0, final=True, words=None):
+    words = ([{"word": text, "start": start, "end": start + duration, "speaker": speaker}] if text else []) if words is None else words
     return json.dumps(
         {
             "type": "Results",
@@ -71,6 +72,10 @@ async def deepgram_session_normalizes_final_results():
             result("", 1.6, 0.2),
             result("Solar is cheap now.", 2.0, 1.5, speaker=7),
             result("A third voice appears.", 4.0, 1.0, speaker=9),
+            result("", 5.0, 2.0, words=[
+                {"word":"Speaker two responds.", "start":5.0, "end":5.8, "speaker":7},
+                {"word":"Speaker three interrupts.", "start":5.8, "end":7.0, "speaker":9},
+            ]),
             json.dumps({"type": "Metadata"}),
         ]
     )
@@ -89,7 +94,9 @@ async def deepgram_session_normalizes_final_results():
     assert [(item.speaker, item.text, item.start_ms, item.end_ms) for item in segments] == [
         ("A", "Hello there.", 0, 1200),
         ("B", "Solar is cheap now.", 2000, 3500),
-        ("A", "A third voice appears.", 4000, 5000),
+        ("C", "A third voice appears.", 4000, 5000),
+        ("B", "Speaker two responds.", 5000, 5800),
+        ("C", "Speaker three interrupts.", 5800, 7000),
     ]
     assert all(item.segment_id.startswith("dg-") for item in segments)
 
