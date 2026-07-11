@@ -1,0 +1,14 @@
+{
+  "mode": "recorded",
+  "disclosure": "Deterministic Phase 2 CI fixture; not a measured provider result.",
+  "events": [
+    {
+      "emit_after_sequence": 0,
+      "segment": {"segment_id":"hero-1","speaker":"A","text":"I think electric cars look better.","start_ms":8000,"end_ms":11200,"is_final":true}
+    },
+    {
+      "emit_after_sequence": 1,
+      "segment": {"segment_id":"hero-2","speaker":"B","text":"Electric vehicles produce no carbon emissions.","start_ms":12000,"end_ms":15400,"is_final":true}
+    }
+  ]
+}
