@@ -46,14 +46,18 @@ The search adapter accepts a compact `{results:[{title,url,publisher,published_a
 
 ## Live Gradient evidence
 
-Production uses a DigitalOcean Gradient agent with the checked-in knowledge-base manifest and web-search fallback. Set both server-side values before deployment:
+Production uses two DigitalOcean Gradient agents (support and counterevidence) with the checked-in knowledge-base manifest and web-search fallback. Set all four server-side values before deployment:
 
 ```sh
-VERITY_GRADIENT_AGENT_ENDPOINT=https://your-agent-endpoint
-VERITY_GRADIENT_AGENT_KEY=...
+VERITY_GRADIENT_SUPPORT_ENDPOINT=https://your-support-agent-endpoint
+VERITY_GRADIENT_SUPPORT_KEY=...
+VERITY_GRADIENT_COUNTER_ENDPOINT=https://your-counter-agent-endpoint
+VERITY_GRADIENT_COUNTER_KEY=...
 ```
 
-`scripts/deploy.ps1` requires these values, runs three live agent/KB smoke attempts, and release preflight fails unless `/readyz` reports `evidence: gradient`. Each smoke attempt must return verified support and counterevidence from at least two independent sources. The endpoint is configuration; the access key is rendered only into the ignored `.verity/app.yaml` deployment spec and is never committed.
+For a single shared agent during migration, legacy `VERITY_GRADIENT_AGENT_ENDPOINT` and `VERITY_GRADIENT_AGENT_KEY` are still accepted and apply to both roles.
+
+`scripts/deploy.ps1` requires complete support and counter agent settings (or the legacy pair), runs three live agent/KB smoke attempts, and release preflight fails unless `/readyz` reports `evidence: gradient`. Each smoke attempt must return verified support and counterevidence from at least two independent sources. Access keys are rendered only into the ignored `.verity/app.yaml` deployment spec and are never committed.
 
 ## Verification
 

@@ -76,8 +76,16 @@ def agent_body(items: list[dict], chunks: list[str | dict], fenced: bool = False
     }
 
 
-def kb_collector(responses: dict) -> GradientEvidenceCollector:
-    collector = GradientEvidenceCollector("https://agent.example", "secret", fetcher=FailingFetcher())
+def kb_collector(responses: dict, *, separate_agents: bool = False) -> GradientEvidenceCollector:
+    support_endpoint = "https://support-agent.example" if separate_agents else "https://agent.example"
+    counter_endpoint = "https://counter-agent.example" if separate_agents else "https://agent.example"
+    collector = GradientEvidenceCollector(
+        FailingFetcher(),
+        support_endpoint=support_endpoint,
+        support_key="support-secret",
+        counter_endpoint=counter_endpoint,
+        counter_key="counter-secret",
+    )
     collector._request = lambda claim, role, queries: responses[role]  # type: ignore[method-assign]
     return collector
 
@@ -175,7 +183,13 @@ async def gradient_verifies_web_items_by_refetching():
         text=f"Context paragraph.\n\n{SUPPORT_EXCERPT}\n\nMore context.",
         content_hash="0" * 64,
     )
-    collector = GradientEvidenceCollector("https://agent.example", "secret", fetcher=FakeFetcher({WEB_URL: page}))
+    collector = GradientEvidenceCollector(
+        FakeFetcher({WEB_URL: page}),
+        support_endpoint="https://agent.example",
+        support_key="secret",
+        counter_endpoint="https://agent.example",
+        counter_key="secret",
+    )
     collector._request = lambda claim, role, queries: agent_body(  # type: ignore[method-assign]
         [
             {"source_type": "web", "title": "Agent title", "url": WEB_URL, "exact_excerpt": SUPPORT_EXCERPT, "publisher": "Agent publisher"},
@@ -206,7 +220,13 @@ async def gradient_survives_one_failed_role_and_fallback_covers_total_failure():
             [COUNTER_EXCERPT],
         )
 
-    partial = GradientEvidenceCollector("https://agent.example", "secret", fetcher=FailingFetcher())
+    partial = GradientEvidenceCollector(
+        FailingFetcher(),
+        support_endpoint="https://agent.example",
+        support_key="secret",
+        counter_endpoint="https://agent.example",
+        counter_key="secret",
+    )
     partial._request = half_failing  # type: ignore[method-assign]
     records = await partial.collect(claim(), classification())
     assert [item.evidence.stance for item in records] == ["counter"]
@@ -214,7 +234,13 @@ async def gradient_survives_one_failed_role_and_fallback_covers_total_failure():
     def failing(claim, role, queries):
         raise ValueError("evidence_provider_unavailable")
 
-    broken = GradientEvidenceCollector("https://agent.example", "secret", fetcher=FailingFetcher())
+    broken = GradientEvidenceCollector(
+        FailingFetcher(),
+        support_endpoint="https://agent.example",
+        support_key="secret",
+        counter_endpoint="https://agent.example",
+        counter_key="secret",
+    )
     broken._request = failing  # type: ignore[method-assign]
     with pytest.raises(ValueError):
         await broken.collect(claim(), classification())
@@ -276,7 +302,17 @@ async def gradient_pipeline_completes_end_to_end():
 
 
 def test_configured_evidence_selects_collector_from_environment(monkeypatch):
-    for key in ("VERITY_GRADIENT_AGENT_ENDPOINT", "VERITY_GRADIENT_AGENT_KEY", "VERITY_EVIDENCE", "VERITY_SEARCH_URL", "VERITY_SEARCH_API_KEY"):
+    for key in (
+        "VERITY_GRADIENT_AGENT_ENDPOINT",
+        "VERITY_GRADIENT_AGENT_KEY",
+        "VERITY_GRADIENT_SUPPORT_ENDPOINT",
+        "VERITY_GRADIENT_SUPPORT_KEY",
+        "VERITY_GRADIENT_COUNTER_ENDPOINT",
+        "VERITY_GRADIENT_COUNTER_KEY",
+        "VERITY_EVIDENCE",
+        "VERITY_SEARCH_URL",
+        "VERITY_SEARCH_API_KEY",
+    ):
         monkeypatch.delenv(key, raising=False)
     collector, _ = configured_evidence_providers()
     assert isinstance(collector, SearchEvidenceCollector) and collector.name == "recorded"
@@ -285,6 +321,37 @@ def test_configured_evidence_selects_collector_from_environment(monkeypatch):
     collector, _ = configured_evidence_providers()
     assert isinstance(collector, FallbackEvidenceCollector) and collector.name == "gradient"
     assert isinstance(collector.primary, GradientEvidenceCollector)
+    assert collector.primary.agents[SearchRole.support][0] == "https://agent.example"
+    assert collector.primary.agents[SearchRole.counter][0] == "https://agent.example"
+    for key in ("VERITY_GRADIENT_AGENT_ENDPOINT", "VERITY_GRADIENT_AGENT_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("VERITY_GRADIENT_SUPPORT_ENDPOINT", "https://support.example")
+    monkeypatch.setenv("VERITY_GRADIENT_SUPPORT_KEY", "support-key")
+    monkeypatch.setenv("VERITY_GRADIENT_COUNTER_ENDPOINT", "https://counter.example")
+    monkeypatch.setenv("VERITY_GRADIENT_COUNTER_KEY", "counter-key")
+    collector, _ = configured_evidence_providers()
+    assert isinstance(collector.primary, GradientEvidenceCollector)
+    assert collector.primary.agents[SearchRole.support] == ("https://support.example", "support-key")
+    assert collector.primary.agents[SearchRole.counter] == ("https://counter.example", "counter-key")
     monkeypatch.setenv("VERITY_EVIDENCE", "recorded")
     collector, _ = configured_evidence_providers()
     assert isinstance(collector, SearchEvidenceCollector) and collector.name == "recorded"
+
+
+def test_gradient_uses_separate_agent_endpoints_per_role():
+    async def scenario():
+        collector = kb_collector({}, separate_agents=True)
+        calls: list[tuple[SearchRole, str]] = []
+
+        def track(claim, role, queries):
+            calls.append((role, collector.agents[role][0]))
+            return agent_body([], [])
+
+        collector._request = track  # type: ignore[method-assign]
+        await collector.collect(claim(), classification())
+        assert calls == [
+            (SearchRole.support, "https://support-agent.example"),
+            (SearchRole.counter, "https://counter-agent.example"),
+        ]
+
+    asyncio.run(scenario())

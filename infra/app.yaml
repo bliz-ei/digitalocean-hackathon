@@ -72,11 +72,18 @@ services:
       - key: VERITY_STT_MODEL
         value: nova-3
         scope: RUN_TIME
-      - key: VERITY_GRADIENT_AGENT_ENDPOINT
-        value: "__VERITY_GRADIENT_AGENT_ENDPOINT__"
+      - key: VERITY_GRADIENT_SUPPORT_ENDPOINT
+        value: "__VERITY_GRADIENT_SUPPORT_ENDPOINT__"
         scope: RUN_TIME
-      - key: VERITY_GRADIENT_AGENT_KEY
-        value: "__VERITY_GRADIENT_AGENT_KEY__"
+      - key: VERITY_GRADIENT_SUPPORT_KEY
+        value: "__VERITY_GRADIENT_SUPPORT_KEY__"
+        scope: RUN_TIME
+        type: SECRET
+      - key: VERITY_GRADIENT_COUNTER_ENDPOINT
+        value: "__VERITY_GRADIENT_COUNTER_ENDPOINT__"
+        scope: RUN_TIME
+      - key: VERITY_GRADIENT_COUNTER_KEY
+        value: "__VERITY_GRADIENT_COUNTER_KEY__"
         scope: RUN_TIME
         type: SECRET
 jobs:

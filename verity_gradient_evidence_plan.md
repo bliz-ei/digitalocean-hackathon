@@ -33,8 +33,8 @@ ClassificationResult (queries)                    ┌─ unchanged ────�
         ▼                                         │ credible_independent_count  │
 EvidenceCollector.collect(claim, classification)  │ ReasoningModel.synthesize   │
   ├── GradientEvidenceCollector   (new)           │ validate_draft              │
-  │     ├── role=support agent call ┐ concurrent  │ complete_claim → notify     │
-  │     └── role=counter agent call ┘             └─────────────────────────────┘
+  │     ├── support Gradient agent  ┐ concurrent  │ complete_claim → notify     │
+  │     └── counter Gradient agent  ┘             └─────────────────────────────┘
   ├── SearchEvidenceCollector     (extracted from today's `_evidence`)
   └── RecordedEvidenceProvider    (disclosed fallback, unchanged)
 ```
@@ -95,8 +95,10 @@ This makes "backend checks that the citations are real" literal, and it reuses
      document metadata (the Phase 1 manifest values).
   4. The requested role (find **supporting** vs **contradicting/qualifying** evidence)
      arrives in the user message.
-- Secrets: `VERITY_GRADIENT_AGENT_ENDPOINT`, `VERITY_GRADIENT_AGENT_KEY` as App
-  Platform secrets (same handling as `VERITY_FAST_*`).
+- Secrets: `VERITY_GRADIENT_SUPPORT_ENDPOINT`, `VERITY_GRADIENT_SUPPORT_KEY`,
+  `VERITY_GRADIENT_COUNTER_ENDPOINT`, and `VERITY_GRADIENT_COUNTER_KEY` as App
+  Platform secrets. Legacy `VERITY_GRADIENT_AGENT_*` still applies both roles when split
+  values are unset.
 - Exit: three curl transcripts checked into `phase0/results/`: PDF hit, web fallback
   (claim outside KB), and honest empty `{"items":[]}` for an unsupportable claim.
 
@@ -180,5 +182,5 @@ Persistence-before-notify, idempotency, and retries already exist. Remaining wor
 
 ## Out of scope (unchanged from the high-level plan)
 
-Multiple agents, Gradient ADK, custom vector DB, user uploads, dynamic KB management,
+Multiple agents beyond support/counter split, Gradient ADK, custom vector DB, user uploads, dynamic KB management,
 broad autonomous research, production source governance.
