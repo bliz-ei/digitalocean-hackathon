@@ -28,7 +28,7 @@ test("the production MV3 bundle loads as an unpacked extension", async ({}, test
     const popup = await context.newPage();
     await popup.goto(new URL("popup.html", worker.url()).href);
     await expect(popup.getByRole("button", { name: "Start live listening" })).toBeVisible();
-    await expect(popup.getByRole("button", { name: "Start fixture" })).toBeVisible();
+    await expect(popup.getByRole("button", { name: "Demo fallback" })).toBeVisible();
   } finally {
     await context.close();
   }

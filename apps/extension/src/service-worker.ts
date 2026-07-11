@@ -1,9 +1,9 @@
 import { api, type Claim, type ClaimState, type TranscriptSegment } from "@verity/contracts";
 import type { ProviderConfig } from "./classifier";
+import {apiBase as base,websocketBase} from "./config";
 
-const base = "http://localhost:8000";
 const terminalStates = new Set<ClaimState>(["COMPLETE", "INSUFFICIENT_EVIDENCE", "FAILED"]);
-type OverlayState = { mode: "fixture" | "live"; connection: string; transcripts: TranscriptSegment[]; claim?: Claim; error?: string };
+type OverlayState = { mode: "fixture" | "live"; connection: string; transcripts: TranscriptSegment[]; pairingCode?: string; pairingExpiresAt?: string; claim?: Claim; error?: string };
 let fixtureSocket: WebSocket | undefined;
 
 chrome.runtime.onMessage.addListener((message, _sender, reply) => {
@@ -25,8 +25,9 @@ chrome.runtime.onMessage.addListener((message, _sender, reply) => {
 async function startFixture(): Promise<void> {
   fixtureSocket?.close();
   const session = await api.createSession(base);
-  await update({ mode: "fixture", connection: "CONNECTING", transcripts: [], claim: undefined, error: undefined });
-  const socketUrl = `${base.replace(/^http/, "ws")}/v1/sessions/${session.id}/stream`;
+  const pairing = await api.createPairing(base, session.id);
+  await update({ mode: "fixture", connection: "CONNECTING", transcripts: [], pairingCode: pairing.code, pairingExpiresAt: pairing.expires_at, claim: undefined, error: undefined });
+  const socketUrl = `${websocketBase()}/v1/sessions/${session.id}/stream`;
   await new Promise<void>((resolve, reject) => {
     const socket = new WebSocket(socketUrl);
     fixtureSocket = socket;
@@ -61,6 +62,7 @@ async function startLive(): Promise<void> {
   if (!tab.id || !tab.url?.startsWith("https://www.youtube.com/")) throw new Error("Open a YouTube video in the active tab first.");
   if (!/^Chrome\//.test(navigator.userAgent)) throw new Error("Live capture requires Chrome 116 or newer.");
   const session = await api.createSession(base, false);
+  const pairing = await api.createPairing(base, session.id);
   const streamId = await new Promise<string>((resolve, reject) => chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id }, (value) => {
     const error = chrome.runtime.lastError;
     if (error || !value) reject(new Error(error?.message ?? "Chrome did not provide a tab stream.")); else resolve(value);
@@ -70,7 +72,7 @@ async function startLive(): Promise<void> {
   const provider = validProvider(stored.verityProvider) ? stored.verityProvider : undefined;
   const response = await chrome.runtime.sendMessage({ type: "OFFSCREEN_START", streamId, sessionId: session.id, credential: session.credential, provider });
   if (!response?.ok) throw new Error(response?.error ?? "Unable to start tab capture.");
-  await update({ mode: "live", connection: "CONNECTING", transcripts: [] });
+  await update({ mode: "live", connection: "CONNECTING", transcripts: [], pairingCode: pairing.code, pairingExpiresAt: pairing.expires_at });
 }
 
 async function consume(event: { type: string; payload: Record<string, unknown> }): Promise<void> {
