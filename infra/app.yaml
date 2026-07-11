@@ -1,0 +1,45 @@
+name: verity
+region: sfo
+services:
+  - name: api
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile.api
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /readyz
+    envs:
+      - key: VERITY_REPOSITORY
+        value: postgres
+      - key: VERITY_DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: VERITY_ALLOWED_ORIGINS
+        scope: RUN_TIME
+      - key: VERITY_PAIRING_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: VAPID_PUBLIC_KEY
+        scope: RUN_TIME
+      - key: VAPID_PRIVATE_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: VAPID_SUBJECT
+        scope: RUN_TIME
+static_sites:
+  - name: pwa
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    build_command: npm ci && npm run build -w @verity/pwa
+    output_dir: apps/pwa/dist
+    catchall_document: index.html
+    envs:
+      - key: VITE_API_URL
+        scope: BUILD_TIME

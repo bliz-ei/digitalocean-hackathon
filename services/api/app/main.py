@@ -4,7 +4,7 @@ from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
@@ -28,6 +28,12 @@ from app.pipeline.evidence import EvidencePipeline
 from app.providers.evidence import configured_evidence_providers
 from app.providers.fakes import FakeProviders
 from app.providers.live import RecordedSttAdapter, configured_fast_classifier
+from app.cross_device import (
+    PairingCreate,
+    PairingRedeem,
+    SubscriptionCreate,
+    configured_cross_device,
+)
 
 
 mode = os.getenv("VERITY_REPOSITORY", "memory")
@@ -42,14 +48,26 @@ providers = FakeProviders()
 live_sessions: dict[str, LiveSession] = {}
 team_classifier = configured_fast_classifier()
 search_provider, page_fetcher, team_reasoner = configured_evidence_providers()
-app = FastAPI(title="Verity API", version="0.3.0")
+cross_device = configured_cross_device()
+app = FastAPI(title="Verity API", version="0.5.0")
+allowed_origins = [value.strip() for value in os.getenv("VERITY_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if value.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     allow_origin_regex=r"chrome-extension://.*",
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["content-type"],
+    allow_headers=["content-type", "x-verity-device-token"],
 )
+
+
+@app.middleware("http")
+async def privacy_headers(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith(("/v1/pairings", "/v1/push-subscriptions")):
+        response.headers["Cache-Control"] = "no-store"
+    if request.url.path.startswith("/v1/claims/"):
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
 
 
 @app.get("/healthz")
@@ -61,10 +79,12 @@ def health():
 def ready():
     return {
         "status": "ready",
+        "repository": mode,
         "stt": "recorded",
         "classifier": team_classifier.name,
         "search": search_provider.name,
         "reasoner": team_reasoner.name,
+        "push": "configured" if os.getenv("VAPID_PUBLIC_KEY") else "disabled",
     }
 
 
@@ -75,8 +95,11 @@ def session(body: SessionCreate):
 
 
 @app.post("/v1/sessions/{session_id}/claims", response_model=Claim)
-async def hero(session_id: str):
-    return await run_hero(session_id, repo, providers, lambda _: __import__("asyncio").sleep(0))
+async def hero(session_id: str, background_tasks: BackgroundTasks):
+    completed = await run_hero(session_id, repo, providers, lambda _: __import__("asyncio").sleep(0))
+    if completed.verdict:
+        background_tasks.add_task(cross_device.notify, session_id, completed.public_id, completed.verdict.explanation)
+    return completed
 
 
 @app.get("/v1/claims/{public_id}", response_model=Claim)
@@ -99,18 +122,40 @@ async def verdict(public_id: str, body: VerdictDraft):
     return completed
 
 
-@app.post("/v1/pairings", response_model=Pairing)
-def pairing():
-    return Pairing(expires_at=utcnow() + timedelta(minutes=10))
+@app.post("/v1/pairings", status_code=201)
+def pairing(body: PairingCreate):
+    if not repo.has_session(body.session_id):
+        raise HTTPException(404, "session not found")
+    return cross_device.create_pairing(body.session_id)
+
+
+@app.post("/v1/pairings/redeem")
+def redeem_pairing(body: PairingRedeem):
+    try:
+        return cross_device.redeem(body)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/v1/push-config")
+def push_config():
+    return {"vapid_public_key": os.getenv("VAPID_PUBLIC_KEY", ""), "enabled": bool(os.getenv("VAPID_PUBLIC_KEY"))}
 
 
 @app.post("/v1/push-subscriptions", status_code=201)
-def subscribe(body: PushSubscription):
-    return {"id": body.device_id, "status": "registered"}
+def subscribe(body: SubscriptionCreate):
+    try:
+        return cross_device.register(body)
+    except ValueError as error:
+        raise HTTPException(403, str(error)) from error
 
 
 @app.delete("/v1/push-subscriptions/{subscription_id}", status_code=204)
-def unsubscribe(subscription_id: str):
+def unsubscribe(subscription_id: str, device_token: str = Header(alias="X-Verity-Device-Token")):
+    try:
+        cross_device.revoke(subscription_id, device_token)
+    except ValueError as error:
+        raise HTTPException(404, str(error)) from error
     return None
 
 
@@ -181,12 +226,16 @@ async def stream(ws: WebSocket, session_id: str):
                 runtime = live_sessions.get(session_id)
                 if not runtime or runtime.closed:
                     dispatch_mode = str(env.payload.get("dispatch_mode", "server"))
+                    async def notify_completed(completed_claim: Claim):
+                        summary = completed_claim.verdict.explanation if completed_claim.verdict else "A Verity result is ready."
+                        await __import__("asyncio").to_thread(cross_device.notify, completed_claim.session_id, completed_claim.public_id, summary)
                     evidence = EvidencePipeline(
                         repository=repo,
                         search=search_provider,
                         fetcher=page_fetcher,
                         reasoner=None if dispatch_mode == "client" else team_reasoner,
                         emit=send,
+                        on_complete=notify_completed,
                     )
                     runtime = LiveSession(
                         session_id=session_id,

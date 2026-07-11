@@ -5,7 +5,7 @@ import {VerdictCard} from "@verity/ui";
 import uiStyles from "../../../packages/ui/src/tokens.css?inline";
 
 const id="verity-shadow-host";
-type OverlayState={mode:"fixture"|"live";connection:string;transcripts:TranscriptSegment[];claim?:Claim;error?:string};
+type OverlayState={mode:"fixture"|"live";connection:string;transcripts:TranscriptSegment[];pairingCode?:string;pairingExpiresAt?:string;claim?:Claim;error?:string};
 let root:Root|undefined;
 
 function Overlay({state}:{state?:OverlayState}){
@@ -14,6 +14,7 @@ function Overlay({state}:{state?:OverlayState}){
   return <section className="shell" aria-live="polite">
     <small>{state.mode==="fixture"?"Fixture mode":"Live transcript"}</small>
     <h2>{state.claim?"Verity is checking…":state.connection}</h2>
+    {state.pairingCode&&<p><strong>iPhone pairing:</strong> <code>{state.pairingCode}</code></p>}
     {state.claim&&<blockquote>“{state.claim.exact_text}”<br/><small>{state.claim.speaker_label} · {(state.claim.start_ms/1000).toFixed(1)}s</small></blockquote>}
     <ol>{state.transcripts.map(item=><li key={item.segment_id}><strong>Speaker {item.speaker}</strong> {item.text}</li>)}</ol>
     {state.error&&<p role="alert">{state.error} Stop and retry from the extension.</p>}

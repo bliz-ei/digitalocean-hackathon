@@ -1,1 +1,20 @@
-<main style="width:250px;padding:12px;font:14px system-ui"><h1 style="font-size:20px">Verity</h1><p id="status">Choose a mode. Live capture starts only after your click.</p><button id="live">Start live listening</button> <button id="fixture">Start fixture</button> <button id="stop">Stop</button></main><script type="module" src="/src/popup.ts"></script>
+<main style="width:320px;padding:14px;font:14px system-ui">
+  <h1 style="font-size:20px">Verity</h1>
+  <p id="status">Choose a mode. Capture starts only after your click.</p>
+  <p><button id="live">Start live listening</button> <button id="fixture">Demo fallback</button> <button id="stop">Stop</button></p>
+  <details>
+    <summary>BYOK settings</summary>
+    <label>Provider
+      <select id="provider"><option value="digitalocean">DigitalOcean</option><option value="openai">OpenAI</option></select>
+    </label><br>
+    <label>API key <input id="api-key" type="password" autocomplete="new-password" spellcheck="false"></label><br>
+    <label>Fast model <input id="fast-model" autocomplete="off"></label><br>
+    <label>Reasoning model <input id="reasoning-model" autocomplete="off"></label><br>
+    <label>Monthly guard ($) <input id="budget" type="number" min="0.10" step="0.10" value="10"></label><br>
+    <button id="test-provider">Test connection</button>
+    <button id="save-provider">Save locally</button>
+    <button id="delete-provider">Delete key</button>
+    <p id="provider-status" role="status"></p>
+    <small>Prototype keys stay in local extension storage and are sent only to the selected provider.</small>
+  </details>
+</main><script type="module" src="/src/popup.ts"></script>

@@ -1,6 +1,8 @@
 import type {ClaimCandidate, SynthesisRequest, WsEnvelope} from "@verity/contracts";
 import {AudioTransport} from "./audio-transport";
 import {classify, synthesize, type ProviderConfig} from "./classifier";
+import {decideBudget,estimateCost,monthKey,type UsageLedger} from "./budget";
+import {websocketBase} from "./config";
 
 type StartMessage = {type:"OFFSCREEN_START";streamId:string;sessionId:string;credential:string;provider?:ProviderConfig};
 
@@ -29,7 +31,7 @@ async function start(message:StartMessage):Promise<void>{
   context.createMediaStreamSource(stream).connect(context.destination);
   const mimeType=MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"audio/webm";
   recorder=new MediaRecorder(stream,{mimeType,audioBitsPerSecond:64_000});
-  const socketUrl=`ws://localhost:8000/v1/sessions/${encodeURIComponent(message.sessionId)}/stream?credential=${encodeURIComponent(message.credential)}`;
+  const socketUrl=`${websocketBase()}/v1/sessions/${encodeURIComponent(message.sessionId)}/stream?credential=${encodeURIComponent(message.credential)}`;
   const channels=stream.getAudioTracks()[0]?.getSettings().channelCount??1;
   transport=new AudioTransport(socketUrl,message.streamId,message.provider?"client":"server",event=>handleEvent(event,message.provider),undefined,12,context.sampleRate,channels);
   transport.connect();
@@ -43,7 +45,15 @@ async function start(message:StartMessage):Promise<void>{
 async function handleEvent(event:WsEnvelope,provider?:ProviderConfig):Promise<void>{
   await publish(event);
   if(event.type==="classification_request"&&provider){
-    try{transport?.sendClassification(await classify(event.payload as unknown as ClaimCandidate,provider))}
+    try{
+      const candidate=event.payload as unknown as ClaimCandidate;
+      const {verityUsageLedger}=await chrome.storage.local.get("verityUsageLedger") as {verityUsageLedger?:UsageLedger};
+      const cost=estimateCost(JSON.stringify(candidate).length,300,2);
+      const decision=decideBudget(verityUsageLedger,provider.monthlyLimit??10,cost);
+      if(!decision.allowed)throw new Error(`Monthly BYOK guard reached; $${decision.remaining.toFixed(4)} remains.`);
+      await chrome.storage.local.set({verityUsageLedger:{month:monthKey(),estimatedCost:(verityUsageLedger?.month===monthKey()?verityUsageLedger.estimatedCost:0)+cost,requests:(verityUsageLedger?.month===monthKey()?verityUsageLedger.requests:0)+1}});
+      transport?.sendClassification(await classify(candidate,provider));
+    }
     catch(error){await publish({type:"classification_failed",payload:{message:safeError(error)}})}
   }
   if(event.type==="synthesis_request"&&provider){

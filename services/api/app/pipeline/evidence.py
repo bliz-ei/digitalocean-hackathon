@@ -44,6 +44,7 @@ class EvidencePipeline:
     fetcher: PageFetcher
     reasoner: ReasoningModel | None
     emit: EventSink
+    on_complete: Callable[[Claim], Awaitable[None]] | None = None
     stage_timeout: float = 10.0
     synthesis_timeout: float = 7.0
     pending: dict[str, PendingSynthesis] = field(default_factory=dict)
@@ -183,6 +184,8 @@ class EvidencePipeline:
         claim.completed_at = utcnow()
         if self.repository.complete_claim(claim, evidence):
             await self._state(claim)
+            if self.on_complete:
+                await self.on_complete(claim)
         self.pending.pop(claim.public_id, None)
         return self.repository.get_claim(claim.public_id) or claim
 
@@ -205,6 +208,8 @@ class EvidencePipeline:
         claim.completed_at = utcnow()
         if self.repository.complete_claim(claim, list(evidence)):
             await self._state(claim)
+            if self.on_complete:
+                await self.on_complete(claim)
         self.pending.pop(claim.public_id, None)
         return self.repository.get_claim(claim.public_id) or claim
 
@@ -216,6 +221,8 @@ class EvidencePipeline:
         claim.completed_at = utcnow()
         if self.repository.complete_claim(claim):
             await self._state(claim)
+            if self.on_complete:
+                await self.on_complete(claim)
         return self.repository.get_claim(claim.public_id) or claim
 
     async def _state(self, claim: Claim) -> None:
