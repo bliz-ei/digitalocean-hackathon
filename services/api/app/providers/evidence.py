@@ -39,6 +39,42 @@ from app.domain.models import (
 
 
 ROOT = Path(__file__).parents[4]
+GRADIENT_KB_MANIFEST = json.loads((ROOT / "fixtures/gradient-kb.json").read_text())
+
+
+def _source_key(value: str) -> str:
+    value = value.strip()
+    if not value:
+        return ""
+    try:
+        if urlsplit(value).scheme in {"http", "https"}:
+            return f"url:{canonicalize_url(value)}"
+    except UnsafeUrl:
+        return ""
+    name = Path(value.replace("\\", "/")).name
+    stem = name.rsplit(".", 1)[0] if "." in name else name
+    return "name:" + re.sub(r"[^a-z0-9]+", "", stem.casefold())
+
+
+def _kb_source_keys(url: str) -> set[str]:
+    for document in GRADIENT_KB_MANIFEST.get("documents", []):
+        if canonicalize_url(str(document.get("url", ""))) != url:
+            continue
+        values = [document["url"], document.get("title", ""), *(document.get("retrieval_names") or [])]
+        return {key for value in values if (key := _source_key(str(value)))}
+    return set()
+
+
+def _chunk_source_keys(chunk: dict) -> set[str]:
+    metadata = chunk.get("metadata") if isinstance(chunk.get("metadata"), dict) else {}
+    values = [
+        chunk.get("filename", ""),
+        metadata.get("item_name", ""),
+        metadata.get("filename", ""),
+        metadata.get("url", ""),
+        metadata.get("source_url", ""),
+    ]
+    return {key for value in values if (key := _source_key(str(value)))}
 
 
 class SearchAdapter(Protocol):
@@ -416,7 +452,7 @@ class GradientEvidenceCollector:
                 raise ValueError("evidence_provider_unavailable") from error
         raise ValueError("evidence_provider_unavailable")
 
-    def _parse(self, body: dict) -> tuple[list[dict], str]:
+    def _parse(self, body: dict) -> tuple[list[dict], list[dict]]:
         try:
             content = str(body["choices"][0]["message"]["content"])
         except (KeyError, IndexError, TypeError) as error:
@@ -430,14 +466,16 @@ class GradientEvidenceCollector:
         if not isinstance(items, list):
             raise ValueError("agent evidence is missing an items list")
         retrieval = body.get("retrieval") if isinstance(body.get("retrieval"), dict) else {}
-        chunks = "\n\n".join(
-            text
-            for item in retrieval.get("retrieved_data") or []
-            if isinstance(item, dict) and (text := str(item.get("content") or item.get("text") or "").strip())
-        )
+        chunks = []
+        for item in retrieval.get("retrieved_data") or []:
+            if not isinstance(item, dict):
+                continue
+            text = str(item.get("page_content") or item.get("content") or item.get("text") or "").strip()
+            if text:
+                chunks.append({**item, "captured_text": text})
         return [item for item in items if isinstance(item, dict)], chunks
 
-    async def _verified(self, claim: Claim, role: SearchRole, item: dict, chunks: str) -> EvidenceRecord | None:
+    async def _verified(self, claim: Claim, role: SearchRole, item: dict, chunks: list[dict]) -> EvidenceRecord | None:
         try:
             url = canonicalize_url(str(item.get("url") or ""))
             excerpt = normalized_excerpt(str(item.get("exact_excerpt") or ""))
@@ -449,7 +487,12 @@ class GradientEvidenceCollector:
                 title, publisher = page.title, page.publisher
                 published_at, retrieved_at = page.published_at, page.retrieved_at
             else:
-                captured = chunks
+                allowed_sources = _kb_source_keys(url)
+                captured = "\n\n".join(
+                    chunk["captured_text"]
+                    for chunk in chunks
+                    if allowed_sources & _chunk_source_keys(chunk)
+                )
                 host = urlsplit(url).hostname or "unknown"
                 title = str(item.get("title") or host)
                 if item.get("page"):

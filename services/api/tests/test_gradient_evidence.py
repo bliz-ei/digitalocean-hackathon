@@ -25,7 +25,7 @@ from app.providers.evidence import (
 
 
 EPA_URL = "https://www.epa.gov/greenvehicles/electric-vehicle-myths"
-ICCT_URL = "https://theicct.org/publication/lifecycle-ghg-passenger-cars"
+ICCT_URL = "https://theicct.org/publication/a-global-comparison-of-the-life-cycle-greenhouse-gas-emissions-of-combustion-engine-and-electric-passenger-cars"
 WEB_URL = "https://apnews.com/article/ev-fact-check"
 SUPPORT_EXCERPT = "Electric vehicles produce zero direct tailpipe emissions while driving on the road."
 COUNTER_EXCERPT = "Manufacturing electric vehicle batteries generates significant carbon emissions during production."
@@ -58,13 +58,20 @@ def classification() -> ClassificationResult:
     )
 
 
-def agent_body(items: list[dict], chunks: list[str], fenced: bool = False) -> dict:
+def agent_body(items: list[dict], chunks: list[str | dict], fenced: bool = False) -> dict:
     content = json.dumps({"items": items})
     if fenced:
         content = f"```json\n{content}\n```"
     return {
         "choices": [{"message": {"content": content}}],
-        "retrieval": {"retrieved_data": [{"content": chunk} for chunk in chunks]},
+        "retrieval": {"retrieved_data": [
+            chunk if isinstance(chunk, dict) else {
+                "page_content": chunk,
+                "filename": "epa-electric-vehicle-myths.pdf" if chunk == SUPPORT_EXCERPT else "icct-lifecycle-ghg-passenger-cars.pdf",
+                "metadata": {},
+            }
+            for chunk in chunks
+        ]},
     }
 
 
@@ -126,6 +133,26 @@ async def gradient_verifies_kb_items_against_retrieval_chunks():
     assert all(item.evidence.id.startswith("ev-") for item in records)
     assert records[0].captured_text == SUPPORT_EXCERPT
     assert credible_independent_count(records) == 2
+
+
+def test_gradient_binds_kb_excerpt_to_its_actual_retrieved_document():
+    async def scenario():
+        responses = {
+            SearchRole.support: agent_body(
+                [{"source_type": "kb", "title": "Electric Vehicle Myths", "url": EPA_URL,
+                  "exact_excerpt": COUNTER_EXCERPT, "publisher": "US EPA"}],
+                [{
+                    "page_content": COUNTER_EXCERPT,
+                    "filename": "icct-lifecycle-ghg-passenger-cars.pdf",
+                    "metadata": {"item_name": ICCT_URL},
+                }],
+            ),
+            SearchRole.counter: agent_body([], []),
+        }
+        records = await kb_collector(responses).collect(claim(), classification())
+        assert records == []
+
+    asyncio.run(scenario())
 
 
 def test_gradient_verifies_web_items_by_refetching():
