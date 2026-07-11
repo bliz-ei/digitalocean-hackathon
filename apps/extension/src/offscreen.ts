@@ -1,7 +1,7 @@
 import type {ClaimCandidate, SynthesisRequest, WsEnvelope} from "@verity/contracts";
 import {AudioTransport} from "./audio-transport";
 import {classify, synthesize, type ProviderConfig} from "./classifier";
-import {decideBudget,estimateCost,monthKey,type UsageLedger} from "./budget";
+import {estimateCost,reserveBudget,type UsageLedger} from "./budget";
 import {websocketBase} from "./config";
 
 type StartMessage = {type:"OFFSCREEN_START";streamId:string;sessionId:string;credential:string;provider?:ProviderConfig};
@@ -47,19 +47,26 @@ async function handleEvent(event:WsEnvelope,provider?:ProviderConfig):Promise<vo
   if(event.type==="classification_request"&&provider){
     try{
       const candidate=event.payload as unknown as ClaimCandidate;
-      const {verityUsageLedger}=await chrome.storage.local.get("verityUsageLedger") as {verityUsageLedger?:UsageLedger};
-      const cost=estimateCost(JSON.stringify(candidate).length,300,2);
-      const decision=decideBudget(verityUsageLedger,provider.monthlyLimit??10,cost);
-      if(!decision.allowed)throw new Error(`Monthly BYOK guard reached; $${decision.remaining.toFixed(4)} remains.`);
-      await chrome.storage.local.set({verityUsageLedger:{month:monthKey(),estimatedCost:(verityUsageLedger?.month===monthKey()?verityUsageLedger.estimatedCost:0)+cost,requests:(verityUsageLedger?.month===monthKey()?verityUsageLedger.requests:0)+1}});
+      await chargeUsage(provider,JSON.stringify(candidate).length,300,2);
       transport?.sendClassification(await classify(candidate,provider));
     }
     catch(error){await publish({type:"classification_failed",payload:{message:safeError(error)}})}
   }
   if(event.type==="synthesis_request"&&provider){
-    try{transport?.sendVerdict(await synthesize(event.payload as unknown as SynthesisRequest,provider))}
+    try{
+      const request=event.payload as unknown as SynthesisRequest;
+      await chargeUsage(provider,JSON.stringify(request).length,700,10);
+      transport?.sendVerdict(await synthesize(request,provider));
+    }
     catch(error){await publish({type:"synthesis_failed",payload:{message:safeError(error)}})}
   }
+}
+
+async function chargeUsage(provider:ProviderConfig,inputChars:number,outputTokens:number,usdPerMillionTokens:number):Promise<void>{
+  const {verityUsageLedger}=await chrome.storage.local.get("verityUsageLedger") as {verityUsageLedger?:UsageLedger};
+  const reservation=reserveBudget(verityUsageLedger,provider.monthlyLimit??10,estimateCost(inputChars,outputTokens,usdPerMillionTokens));
+  if(!reservation.decision.allowed)throw new Error(`Monthly BYOK guard reached; $${reservation.decision.remaining.toFixed(4)} remains.`);
+  await chrome.storage.local.set({verityUsageLedger:reservation.ledger});
 }
 
 async function publish(event:Pick<WsEnvelope,"type"|"payload">):Promise<void>{

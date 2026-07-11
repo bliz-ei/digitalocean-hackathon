@@ -21,6 +21,7 @@ from app.providers.evidence import (
     RecordedEvidenceProvider,
     SearchEvidenceCollector,
     configured_evidence_providers,
+    GRADIENT_OUTPUT_INSTRUCTIONS,
 )
 
 
@@ -103,6 +104,12 @@ class FakeFetcher:
 
 def test_gradient_verifies_kb_items_against_retrieval_chunks():
     asyncio.run(gradient_verifies_kb_items_against_retrieval_chunks())
+
+
+def test_gradient_prompt_requires_machine_verifiable_exact_excerpts():
+    assert '"source_type":"kb|web"' in GRADIENT_OUTPUT_INSTRUCTIONS
+    assert '"exact_excerpt"' in GRADIENT_OUTPUT_INSTRUCTIONS
+    assert "Never invent, paraphrase, or combine excerpts" in GRADIENT_OUTPUT_INSTRUCTIONS
 
 
 async def gradient_verifies_kb_items_against_retrieval_chunks():

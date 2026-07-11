@@ -375,6 +375,9 @@ GRADIENT_ROLE_INSTRUCTIONS = {
     SearchRole.support: "Retrieve up to 3 evidence passages that directly support the claim.",
     SearchRole.counter: "Retrieve up to 3 evidence passages that contradict the claim, qualify it, or add missing context.",
 }
+GRADIENT_OUTPUT_INSTRUCTIONS = """Return JSON only, with no markdown, using exactly this shape:
+{"items":[{"source_type":"kb|web","title":"source title","url":"canonical public source URL","publisher":"publisher","published_at":null,"page":null,"exact_excerpt":"verbatim passage copied from the retrieved source"}]}
+Use source_type=kb only for a knowledge-base document. For kb items, use the canonical URL and title from the knowledge-base instructions. Never invent, paraphrase, or combine excerpts. Return {"items":[]} when no passage is available."""
 
 
 class GradientEvidenceCollector:
@@ -417,6 +420,7 @@ class GradientEvidenceCollector:
     def _request(self, claim: Claim, role: SearchRole, queries: list[str]) -> dict:
         content = (
             f"{GRADIENT_ROLE_INSTRUCTIONS[role]}\n"
+            f"{GRADIENT_OUTPUT_INSTRUCTIONS}\n"
             f"CLAIM_DATA\n{claim.normalized_text}\nEND_CLAIM_DATA\n"
             f"SEARCH_HINTS\n{json.dumps(queries)}\nEND_SEARCH_HINTS"
         )

@@ -16,6 +16,8 @@ values = {
     "__VAPID_PRIVATE_KEY__": os.getenv("VAPID_PRIVATE_KEY", ""),
     "__VAPID_SUBJECT__": os.getenv("VAPID_SUBJECT", ""),
     "__VERITY_STT_API_KEY__": os.getenv("VERITY_STT_API_KEY", ""),
+    "__VERITY_GRADIENT_AGENT_ENDPOINT__": os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", ""),
+    "__VERITY_GRADIENT_AGENT_KEY__": os.getenv("VERITY_GRADIENT_AGENT_KEY", ""),
 }
 missing = [token.strip("_") for token, value in values.items() if not value]
 if missing:
@@ -26,6 +28,9 @@ if len(values["__VERITY_PAIRING_SECRET__"]) < 32:
     raise SystemExit(2)
 if not values["__VAPID_SUBJECT__"].startswith(("mailto:", "https://")):
     print("VAPID_SUBJECT must start with mailto: or https://", file=sys.stderr)
+    raise SystemExit(2)
+if not values["__VERITY_GRADIENT_AGENT_ENDPOINT__"].startswith("https://"):
+    print("VERITY_GRADIENT_AGENT_ENDPOINT must start with https://", file=sys.stderr)
     raise SystemExit(2)
 
 rendered = args.template.read_text()
