@@ -3,6 +3,9 @@ param(
   [string]$SttApiKey = $env:VERITY_STT_API_KEY,
   [string]$GradientAgentEndpoint = $env:VERITY_GRADIENT_AGENT_ENDPOINT,
   [string]$GradientAgentKey = $env:VERITY_GRADIENT_AGENT_KEY,
+  [string]$GradientModelKey = $env:VERITY_GRADIENT_MODEL_KEY,
+  [string]$FastModel = $env:VERITY_FAST_MODEL,
+  [string]$ReasoningModel = $env:VERITY_REASONING_MODEL,
   [string]$AppId = $env:VERITY_APP_ID,
   [string]$AccessToken = $env:DIGITALOCEAN_ACCESS_TOKEN
 )
@@ -25,6 +28,14 @@ if (-not $GradientAgentEndpoint -or $GradientAgentEndpoint -notmatch '^https://'
   throw "Set VERITY_GRADIENT_AGENT_ENDPOINT to the HTTPS inference endpoint for the Gradient agent."
 }
 if (-not $GradientAgentKey) { throw "Set VERITY_GRADIENT_AGENT_KEY to the Gradient agent access key." }
+$FastApiKey = if ($env:VERITY_FAST_API_KEY) { $env:VERITY_FAST_API_KEY } else { $GradientModelKey }
+$ReasoningApiKey = if ($env:VERITY_REASONING_API_KEY) { $env:VERITY_REASONING_API_KEY } else { $GradientModelKey }
+if (-not $FastApiKey -or -not $ReasoningApiKey) {
+  throw "Set VERITY_GRADIENT_MODEL_KEY to one Gradient model access key (reused for the classifier and reasoner), or set VERITY_FAST_API_KEY and VERITY_REASONING_API_KEY individually."
+}
+if (-not $FastModel -or -not $ReasoningModel) {
+  throw "Set VERITY_FAST_MODEL and VERITY_REASONING_MODEL to Gradient serverless model slugs (see the Gradient console model list)."
+}
 if (-not $VapidSubject -or $VapidSubject -notmatch '^(mailto:|https://)') {
   throw "Pass -VapidSubject mailto:you@example.com (or set VAPID_SUBJECT)."
 }
@@ -56,6 +67,12 @@ $env:VAPID_SUBJECT = $VapidSubject
 $env:VERITY_STT_API_KEY = $SttApiKey
 $env:VERITY_GRADIENT_AGENT_ENDPOINT = $GradientAgentEndpoint
 $env:VERITY_GRADIENT_AGENT_KEY = $GradientAgentKey
+$env:VERITY_FAST_API_KEY = $FastApiKey
+$env:VERITY_FAST_MODEL = $FastModel
+if (-not $env:VERITY_FAST_BASE_URL) { $env:VERITY_FAST_BASE_URL = "https://inference.do-ai.run" }
+$env:VERITY_REASONING_API_KEY = $ReasoningApiKey
+$env:VERITY_REASONING_MODEL = $ReasoningModel
+if (-not $env:VERITY_REASONING_BASE_URL) { $env:VERITY_REASONING_BASE_URL = "https://inference.do-ai.run" }
 node scripts/run-python.mjs scripts/prepare_deploy.py
 node scripts/run-python.mjs scripts/smoke_gradient.py
 

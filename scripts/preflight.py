@@ -30,6 +30,10 @@ required_env = (
     "VERITY_STT_API_KEY",
     "VERITY_GRADIENT_AGENT_ENDPOINT",
     "VERITY_GRADIENT_AGENT_KEY",
+    "VERITY_FAST_API_KEY",
+    "VERITY_FAST_MODEL",
+    "VERITY_REASONING_API_KEY",
+    "VERITY_REASONING_MODEL",
 )
 if args.release:
     for key in required_env:
@@ -49,6 +53,8 @@ if health_url:
             and readiness.get("push") == "configured"
             and readiness.get("stt") == "deepgram"
             and readiness.get("evidence") == "gradient"
+            and readiness.get("classifier") == "openai-compatible"
+            and readiness.get("reasoner") == "openai-compatible"
         )
     except Exception:
         checks["deployed_readiness"] = False

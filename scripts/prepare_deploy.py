@@ -18,6 +18,12 @@ values = {
     "__VERITY_STT_API_KEY__": os.getenv("VERITY_STT_API_KEY", ""),
     "__VERITY_GRADIENT_AGENT_ENDPOINT__": os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", ""),
     "__VERITY_GRADIENT_AGENT_KEY__": os.getenv("VERITY_GRADIENT_AGENT_KEY", ""),
+    "__VERITY_FAST_BASE_URL__": os.getenv("VERITY_FAST_BASE_URL", "https://inference.do-ai.run"),
+    "__VERITY_FAST_API_KEY__": os.getenv("VERITY_FAST_API_KEY", ""),
+    "__VERITY_FAST_MODEL__": os.getenv("VERITY_FAST_MODEL", ""),
+    "__VERITY_REASONING_BASE_URL__": os.getenv("VERITY_REASONING_BASE_URL", "https://inference.do-ai.run"),
+    "__VERITY_REASONING_API_KEY__": os.getenv("VERITY_REASONING_API_KEY", ""),
+    "__VERITY_REASONING_MODEL__": os.getenv("VERITY_REASONING_MODEL", ""),
 }
 missing = [token.strip("_") for token, value in values.items() if not value]
 if missing:
@@ -32,6 +38,10 @@ if not values["__VAPID_SUBJECT__"].startswith(("mailto:", "https://")):
 if not values["__VERITY_GRADIENT_AGENT_ENDPOINT__"].startswith("https://"):
     print("VERITY_GRADIENT_AGENT_ENDPOINT must start with https://", file=sys.stderr)
     raise SystemExit(2)
+for token in ("__VERITY_FAST_BASE_URL__", "__VERITY_REASONING_BASE_URL__"):
+    if not values[token].startswith("https://"):
+        print(token.strip("_") + " must start with https://", file=sys.stderr)
+        raise SystemExit(2)
 
 rendered = args.template.read_text()
 for token, value in values.items():
