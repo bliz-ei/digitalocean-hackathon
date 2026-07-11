@@ -1,0 +1,108 @@
+/* App-level layout for the Verity PWA. Every value references a design-system token.
+   Mobile-first (375px primary target); verdict reading holds a ~640px column at desktop. */
+
+.vy-app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-canvas);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- App bar ---- */
+.vy-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-hairline);
+  position: sticky;
+  top: 0;
+  background: var(--color-canvas);
+  z-index: 10;
+}
+.vy-appbar__brand { display: inline-flex; align-items: center; }
+.vy-appbar__back {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--rounded-md);
+  border: 1px solid var(--color-hairline-strong);
+  color: var(--color-on-dark);
+  font-size: var(--type-button-md-size);
+  font-weight: var(--type-button-md-weight);
+  letter-spacing: var(--type-button-md-tracking);
+}
+
+/* ---- Page column ---- */
+.vy-page {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg) var(--space-section);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+@media (max-width: 480px) {
+  .vy-page { padding: var(--space-lg) var(--space-lg) var(--space-xxl); }
+}
+
+/* The design-system VerdictCard caps at 720px; let it fill the reading column. */
+.vy-page .vy-verdict-card { max-width: 100%; }
+
+/* ---- Stepper cards ---- */
+.vy-step .vy-btn { align-self: flex-start; }
+.vy-mute { color: var(--color-mute); }
+
+/* ---- badge-pro chip (disclosed-fixture disclosure) ---- */
+.vy-badge-pro {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xxs) var(--space-sm);
+  border-radius: var(--rounded-xs);
+  background: var(--color-surface-elevated);
+  color: var(--color-on-dark-mute);
+  border: 1px solid var(--color-hairline);
+  font-size: var(--type-caption-sm-size);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase;
+}
+
+/* ---- Recent-claims history rows ---- */
+.vy-history .vy-row { align-items: center; min-height: 44px; gap: var(--space-sm); }
+.vy-history .vy-row__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-body);
+  font-size: var(--type-body-sm-size);
+}
+.vy-history .vy-row__icon { flex: none; }
+.vy-when { color: var(--color-mute); font-size: var(--type-caption-sm-size); white-space: nowrap; }
+
+/* ---- Loading skeleton (surface-ladder shimmer, reduced-motion safe) ---- */
+.vy-skel { display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-sm); }
+.vy-skel__line, .vy-skel__block {
+  border-radius: var(--rounded-sm);
+  background: linear-gradient(90deg, var(--color-surface-elevated) 0%, var(--color-surface-card) 50%, var(--color-surface-elevated) 100%);
+  background-size: 200% 100%;
+  animation: vy-shimmer 1.4s ease-in-out infinite;
+}
+.vy-skel__line { height: 12px; }
+.vy-skel__line--eyebrow { width: 30%; }
+.vy-skel__line--badge { width: 45%; height: 20px; }
+.vy-skel__line--caption { width: 55%; }
+.vy-skel__block--claim { height: 64px; }
+.vy-skel__block--zone { height: 120px; }
+@keyframes vy-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vy-skel__line, .vy-skel__block { animation: none; }
+}

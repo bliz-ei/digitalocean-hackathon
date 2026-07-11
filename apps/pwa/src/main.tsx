@@ -1,94 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
-import { api, type Claim, type PairedDevice } from "@verity/contracts";
-import { StatusCard, VerdictCard, Button, TextInput } from "@verity/ui";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@verity/ui"; // injects tokens.css / base.css / fonts.css / components.css
+import "./app.css";
+import { Home } from "./routes/Home";
+import { ClaimPage } from "./routes/ClaimPage";
+import { DemoClaim } from "./routes/DemoClaim";
 
-const base = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-const publicId = decodeURIComponent(location.pathname.match(/^\/claims\/([^/]+)/)?.[1] ?? "");
-const redemptionToken = new URLSearchParams(location.search).get("pair") ?? undefined;
-
-function decodeVapid(value: string): ArrayBuffer {
-  const padding = "=".repeat((4 - value.length % 4) % 4);
-  return Uint8Array.from(atob((value + padding).replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0)).buffer as ArrayBuffer;
-}
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { refetchOnWindowFocus: false, staleTime: 30_000 } },
+});
 
 function App() {
-  const [status, setStatus] = useState(publicId ? "loading" : "Pair your iPhone");
-  const [claim, setClaim] = useState<Claim>();
-  const [code, setCode] = useState("");
-  const [device, setDevice] = useState<PairedDevice | undefined>(() => {
-    const saved = localStorage.getItem("verityDevice");
-    return saved ? JSON.parse(saved) : undefined;
-  });
-
-  useEffect(() => {
-    if (!publicId) return;
-    api.getClaim(base, publicId).then(setClaim).catch(() => setStatus(navigator.onLine ? "Result not found" : "Offline — reconnect to load this result"));
-  }, []);
-
-  async function pair() {
-    setStatus("Pairing…");
-    try {
-      const next = await api.redeemPairing(base, { code: redemptionToken ? undefined : code, redemption_token: redemptionToken, device_label: "Demo iPhone" });
-      localStorage.setItem("verityDevice", JSON.stringify(next));
-      setDevice(next); setStatus("Paired — enable notifications");
-    } catch { setStatus("That pairing code is invalid, expired, or already used"); }
-  }
-
-  async function enableNotifications() {
-    if (!device) return;
-    setStatus("Enabling notifications…");
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") { setStatus("Notifications are blocked. Enable them in iPhone Settings."); return; }
-      const registration = await navigator.serviceWorker.ready;
-      const config = await api.pushConfig(base);
-      if (!config.enabled) throw new Error("Push is not configured");
-      const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeVapid(config.vapid_public_key) });
-      const json = subscription.toJSON();
-      const saved = await api.registerPush(base, { device_id: device.device_id, device_token: device.device_token, endpoint: json.endpoint!, p256dh: json.keys!.p256dh, auth: json.keys!.auth });
-      localStorage.setItem("veritySubscriptionId", saved.subscription_id);
-      setStatus("Notifications enabled — you can lock this phone");
-    } catch (error) { setStatus(error instanceof Error ? error.message : "Unable to enable notifications"); }
-  }
-
-  async function disableNotifications() {
-    if (!device) return;
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-    await subscription?.unsubscribe().catch(() => false);
-    const id = localStorage.getItem("veritySubscriptionId");
-    if (id) await api.revokePush(base, id, device.device_token).catch(() => undefined);
-    localStorage.removeItem("veritySubscriptionId");
-    setStatus("Notifications disabled");
-  }
-
-  async function fixtureDemo() {
-    setStatus("Starting disclosed demo fallback…");
-    try {
-      const session = await api.createSession(base);
-      const result = await api.startFixture(base, session.id);
-      history.pushState({}, "", `/claims/${result.public_id}`);
-      setClaim(result);
-    } catch { setStatus("Demo fallback failed"); }
-  }
-
-  if (claim) return <main className="vy-root"><VerdictCard claim={claim} /></main>;
-  return <main className="vy-root">
-    <StatusCard state={status} />
-    {!device ? <section className="vy-status-card">
-      <h2 className="vy-status-card__title">Connect this iPhone</h2>
-      <p className="vy-status-card__body">Open Verity from your Home Screen, then enter the six-digit code shown on your desktop.</p>
-      {!redemptionToken&&<TextInput label="Pairing code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />}
-      <Button disabled={!redemptionToken&&code.length !== 6} onClick={pair}>{redemptionToken?"Connect this device":"Pair device"}</Button>
-    </section> : <section className="vy-status-card">
-      <h2 className="vy-status-card__title">{device.device_label}</h2>
-      <Button onClick={enableNotifications}>Enable notifications</Button>
-      <Button variant="secondary" onClick={disableNotifications}>Disable notifications</Button>
-    </section>}
-    <section className="vy-status-card"><Button variant="tertiary" onClick={fixtureDemo}>Start fixture demo</Button><small className="vy-status-card__body">Disclosed fallback using checked-in evidence.</small></section>
-  </main>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <div className="vy-root">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/claims/demo" element={<DemoClaim />} />
+            <Route path="/claims/:publicId" element={<ClaimPage />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
 }
 
-createRoot(document.getElementById("root")!).render(<React.StrictMode><App /></React.StrictMode>);
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+
 if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/sw.js");
