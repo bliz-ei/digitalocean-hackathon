@@ -8,6 +8,7 @@
 - `VAPID_PRIVATE_KEY`
 - `VAPID_SUBJECT` (a `mailto:` or HTTPS contact)
 - `VERITY_ALLOWED_ORIGINS` (exact PWA origins, comma-separated)
+- `VERITY_STT_API_KEY` (optional Deepgram key; live STT falls back to the recorded fixture when unset. `VERITY_STT_MODEL` overrides the default `nova-3`.)
 
 Build the PWA and extension with `VITE_API_URL=https://<api-host>`.
 
