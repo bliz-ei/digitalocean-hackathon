@@ -120,6 +120,7 @@ export function Home() {
               </StepCard>
             ) : (
               <StepCard n={2} title="Enable notifications">
+                {pairStatus && <p className="vy-status-card__body vy-mute" role="status">{pairStatus}</p>}
                 <p className="vy-status-card__body">Paired as <strong>{device.device_label}</strong>. Allow notifications so verdicts reach this phone while it&rsquo;s locked.</p>
                 <Button onClick={enableNotifications}>Enable notifications</Button>
                 <Button variant="secondary" onClick={disableNotifications}>Disable notifications</Button>
