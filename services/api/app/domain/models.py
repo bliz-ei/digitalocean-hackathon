@@ -203,7 +203,7 @@ class AudioChunkMetadata(BaseModel):
 
 class TranscriptSegment(BaseModel):
     segment_id: str = Field(min_length=1, max_length=160)
-    speaker: str = Field(pattern=r"^[AB]$")
+    speaker: str = Field(pattern=r"^[A-Z]$")
     text: str = Field(min_length=1, max_length=2_000)
     start_ms: int = Field(ge=0)
     end_ms: int = Field(ge=0)
@@ -218,7 +218,7 @@ class TranscriptSegment(BaseModel):
 
 class ClaimCandidate(BaseModel):
     candidate_id: str
-    speaker: str = Field(pattern=r"^[AB]$")
+    speaker: str = Field(pattern=r"^[A-Z]$")
     exact_text: str = Field(min_length=1, max_length=2_000)
     normalized_text: str = Field(min_length=1, max_length=2_000)
     start_ms: int = Field(ge=0)

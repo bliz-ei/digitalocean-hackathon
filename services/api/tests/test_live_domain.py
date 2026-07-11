@@ -18,11 +18,13 @@ def test_audio_ledger_acknowledges_contiguous_chunks_and_ignores_replay():
         ledger.accept(8)
 
 
-def test_speaker_mapper_is_stable_and_rejects_a_third_speaker():
+def test_speaker_mapper_is_stable_for_many_speakers():
     mapper = SpeakerMapper()
-    assert [mapper.map("provider-7"), mapper.map("provider-2"), mapper.map("provider-7")] == ["A", "B", "A"]
+    assert [mapper.map("provider-7"), mapper.map("provider-2"), mapper.map("provider-9"), mapper.map("provider-7")] == ["A", "B", "C", "A"]
+    for index in range(3, 26):
+        assert mapper.map(f"extra-{index}") == chr(ord("A") + index)
     with pytest.raises(ValueError):
-        mapper.map("provider-9")
+        mapper.map("overflow")
 
 
 def test_sentence_assembly_handles_switches_repeated_finals_and_backchannels():

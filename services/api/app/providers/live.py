@@ -66,6 +66,7 @@ class DeepgramSttSession:
         self._speakers = SpeakerMapper()
         self._count = 0
         self._receiver = asyncio.create_task(self._receive())
+        self._keepalive = asyncio.create_task(self._keep_alive())
 
     async def send(self, chunk: bytes, sequence: int) -> None:
         if not chunk:
@@ -76,12 +77,25 @@ class DeepgramSttSession:
             raise ValueError("stt_unavailable") from error
 
     async def close(self) -> None:
+        self._keepalive.cancel()
+        with suppress(asyncio.CancelledError):
+            await self._keepalive
         with suppress(Exception):
             await self._socket.send('{"type": "CloseStream"}')
             await asyncio.wait_for(self._receiver, timeout=5)
         with suppress(Exception):
             await self._socket.close()
         self._receiver.cancel()
+
+    async def _keep_alive(self) -> None:
+        try:
+            while True:
+                await asyncio.sleep(5)
+                await self._socket.send('{"type": "KeepAlive"}')
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            return
 
     async def _receive(self) -> None:
         with suppress(Exception):
@@ -92,29 +106,42 @@ class DeepgramSttSession:
                 if data.get("type") != "Results" or not data.get("is_final"):
                     continue
                 alternative = ((data.get("channel") or {}).get("alternatives") or [{}])[0]
-                text = normalize_text(str(alternative.get("transcript") or ""))
-                if not text:
+                words = [word for word in alternative.get("words", []) if isinstance(word, dict)]
+                if not words:
+                    text = normalize_text(str(alternative.get("transcript") or ""))
+                    if text:
+                        await self._emit_segment(
+                            "0", text,
+                            round(float(data.get("start") or 0) * 1000),
+                            round((float(data.get("start") or 0) + float(data.get("duration") or 0)) * 1000),
+                        )
                     continue
-                words = alternative.get("words") or [{}]
-                start_ms = round(float(data.get("start") or 0) * 1000)
-                self._count += 1
-                await self._emit(
-                    TranscriptSegment(
-                        segment_id=f"dg-{self._count}",
-                        speaker=self._speaker(str(words[0].get("speaker", 0))),
-                        text=text,
-                        start_ms=start_ms,
-                        end_ms=start_ms + round(float(data.get("duration") or 0) * 1000),
-                    )
-                )
+                group: list[dict] = []
+                current_label: str | None = None
+                for word in words:
+                    label = str(word.get("speaker", 0))
+                    if group and label != current_label:
+                        await self._emit_words(current_label or "0", group)
+                        group = []
+                    current_label = label
+                    group.append(word)
+                if group:
+                    await self._emit_words(current_label or "0", group)
 
-    def _speaker(self, label: str) -> str:
-        # The transcript schema is two-speaker; extra diarized voices fold into A.
-        try:
-            return self._speakers.map(label)
-        except ValueError:
-            return "A"
+    async def _emit_words(self, provider_label: str, words: list[dict]) -> None:
+        text = normalize_text(" ".join(str(word.get("punctuated_word") or word.get("word") or "") for word in words))
+        if not text:
+            return
+        start = float(words[0].get("start") or 0)
+        end = float(words[-1].get("end") or start)
+        await self._emit_segment(provider_label, text, round(start * 1000), round(end * 1000))
 
+    async def _emit_segment(self, provider_label: str, text: str, start_ms: int, end_ms: int) -> None:
+        self._count += 1
+        await self._emit(TranscriptSegment(
+            segment_id=f"dg-{self._count}", speaker=self._speakers.map(provider_label),
+            text=text, start_ms=start_ms, end_ms=max(start_ms, end_ms),
+        ))
 
 class DeepgramSttAdapter:
     """Streams containerized tab audio to Deepgram live transcription."""
@@ -130,7 +157,14 @@ class DeepgramSttAdapter:
         connector = self.connector
         if connector is None:
             from websockets.asyncio.client import connect as connector
-        query = urlencode({"model": self.model, "smart_format": "true", "diarize": "true"})
+        query = urlencode({
+            "model": self.model,
+            "smart_format": "true",
+            "punctuate": "true",
+            "interim_results": "true",
+            "utterance_end_ms": "1000",
+            "diarize_model": "latest",
+        })
         try:
             socket = await connector(
                 f"wss://api.deepgram.com/v1/listen?{query}",
