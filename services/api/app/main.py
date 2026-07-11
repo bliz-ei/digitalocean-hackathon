@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from app.domain.models import (
@@ -28,6 +29,7 @@ from app.pipeline.evidence import EvidencePipeline
 from app.providers.evidence import configured_evidence_providers
 from app.providers.fakes import FakeProviders
 from app.providers.live import RecordedSttAdapter, configured_fast_classifier
+from app.readiness import readiness_checks
 from app.cross_device import (
     PairingCreate,
     PairingRedeem,
@@ -77,15 +79,13 @@ def health():
 
 @app.get("/readyz")
 def ready():
-    return {
-        "status": "ready",
-        "repository": mode,
-        "stt": "recorded",
-        "classifier": team_classifier.name,
-        "search": search_provider.name,
-        "reasoner": team_reasoner.name,
-        "push": "configured" if os.getenv("VAPID_PUBLIC_KEY") else "disabled",
-    }
+    ok, body = readiness_checks(mode, repo)
+    body["classifier"] = team_classifier.name
+    body["search"] = search_provider.name
+    body["reasoner"] = team_reasoner.name
+    if not ok:
+        return JSONResponse(status_code=503, content=body)
+    return body
 
 
 @app.post("/v1/sessions", response_model=SessionCreated, status_code=201)
