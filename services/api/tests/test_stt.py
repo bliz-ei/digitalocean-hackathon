@@ -3,7 +3,14 @@ import json
 
 import pytest
 
-from app.providers.live import DeepgramSttAdapter, RecordedSttAdapter, configured_stt
+from app.providers.live import (
+    DeepgramSttAdapter,
+    DeepgramSttSession,
+    FallbackSttAdapter,
+    RecordedSttAdapter,
+    RecordedSttSession,
+    configured_stt,
+)
 
 
 class FakeSocket:
@@ -111,11 +118,43 @@ def test_deepgram_connect_failure_is_sanitized():
         asyncio.run(adapter.connect("session", lambda segment: None))
 
 
+def test_fallback_adapter_degrades_to_recorded_when_primary_unavailable():
+    asyncio.run(fallback_adapter_degrades_to_recorded_when_primary_unavailable())
+
+
+async def fallback_adapter_degrades_to_recorded_when_primary_unavailable():
+    async def failing(url, additional_headers):
+        raise OSError("connection refused by upstream")
+
+    adapter = FallbackSttAdapter(DeepgramSttAdapter("secret", connector=failing), RecordedSttAdapter())
+    assert adapter.name == "deepgram"
+    session = await adapter.connect("session", lambda segment: None)
+    assert isinstance(session, RecordedSttSession)
+    assert adapter.name == "recorded"
+
+
+def test_fallback_adapter_prefers_the_primary_when_it_connects():
+    asyncio.run(fallback_adapter_prefers_the_primary_when_it_connects())
+
+
+async def fallback_adapter_prefers_the_primary_when_it_connects():
+    socket = FakeSocket([])
+    adapter = FallbackSttAdapter(DeepgramSttAdapter("secret", connector=connector_for(socket)), RecordedSttAdapter())
+    session = await adapter.connect("session", lambda segment: None)
+    assert isinstance(session, DeepgramSttSession)
+    assert adapter.name == "deepgram"
+    await session.close()
+
+
 def test_configured_stt_selects_adapter_from_environment(monkeypatch):
     monkeypatch.delenv("VERITY_STT_API_KEY", raising=False)
+    monkeypatch.delenv("VERITY_STT", raising=False)
     assert isinstance(configured_stt(), RecordedSttAdapter)
     monkeypatch.setenv("VERITY_STT_API_KEY", "secret")
     monkeypatch.setenv("VERITY_STT_MODEL", "nova-2")
     adapter = configured_stt()
-    assert isinstance(adapter, DeepgramSttAdapter)
-    assert adapter.model == "nova-2"
+    assert isinstance(adapter, FallbackSttAdapter)
+    assert adapter.primary.model == "nova-2"
+    assert isinstance(adapter.backup, RecordedSttAdapter)
+    monkeypatch.setenv("VERITY_STT", "recorded")
+    assert isinstance(configured_stt(), RecordedSttAdapter)
