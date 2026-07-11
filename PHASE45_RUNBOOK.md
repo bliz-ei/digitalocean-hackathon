@@ -7,6 +7,8 @@
 - `VERITY_PAIRING_SECRET`: at least 32 random characters.
 - `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: one matching Web Push key pair.
 - `VAPID_SUBJECT`: a `mailto:` or HTTPS contact.
+- `VERITY_STT_API_KEY` (optional Deepgram key; live STT falls back to the recorded fixture when unset. `VERITY_STT_MODEL` overrides the default `nova-3`.)
+- `VERITY_STT=recorded` (demo kill-switch: forces the recorded fixture even when the Deepgram key is set. With a key set and no kill-switch, a failed Deepgram connect degrades to the recorded fixture automatically; `/readyz` then reports `"stt": "recorded"` and claims carry `fixture_mode=true`.)
 
 The App Platform spec binds the public app URL into both `VITE_API_URL` and
 `VERITY_ALLOWED_ORIGINS`. Its pre-deploy job applies each migration exactly once and rejects

@@ -28,7 +28,7 @@ from app.pipeline.live import LiveSession
 from app.pipeline.evidence import EvidencePipeline
 from app.providers.evidence import configured_evidence_providers
 from app.providers.fakes import FakeProviders
-from app.providers.live import RecordedSttAdapter, configured_fast_classifier
+from app.providers.live import configured_fast_classifier, configured_stt
 from app.readiness import readiness_checks
 from app.cross_device import (
     PairingCreate,
@@ -49,6 +49,7 @@ repo = (
 providers = FakeProviders()
 live_sessions: dict[str, LiveSession] = {}
 team_classifier = configured_fast_classifier()
+stt_adapter = configured_stt()
 search_provider, page_fetcher, team_reasoner = configured_evidence_providers()
 cross_device = configured_cross_device()
 app = FastAPI(title="Verity API", version="0.5.0")
@@ -80,6 +81,7 @@ def health():
 @app.get("/readyz")
 def ready():
     ok, body = readiness_checks(mode, repo)
+    body["stt"] = stt_adapter.name
     body["classifier"] = team_classifier.name
     body["search"] = search_provider.name
     body["reasoner"] = team_reasoner.name
@@ -247,7 +249,7 @@ async def stream(ws: WebSocket, session_id: str):
                     runtime = LiveSession(
                         session_id=session_id,
                         repository=repo,
-                        stt_adapter=RecordedSttAdapter(),
+                        stt_adapter=stt_adapter,
                         classifier=None if dispatch_mode == "client" else team_classifier,
                         emit=send,
                         evidence_pipeline=evidence,
@@ -255,7 +257,13 @@ async def stream(ws: WebSocket, session_id: str):
                     live_sessions[session_id] = runtime
                 else:
                     runtime.emit = send
-                await runtime.start(stream_id)
+                try:
+                    await runtime.start(stream_id)
+                except ValueError as error:
+                    if runtime.stt is None:
+                        live_sessions.pop(session_id, None)
+                    await send("error", {"code": "capture_start_failed", "detail": str(error)[:160]}, env.sequence)
+                    continue
                 await send("ack", {"watermark": runtime.ledger.watermark}, env.sequence)
             elif env.type == "audio_chunk":
                 if not runtime:
