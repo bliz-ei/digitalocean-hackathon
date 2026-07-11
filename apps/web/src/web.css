@@ -313,6 +313,15 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   font-size: var(--type-caption-sm-size); letter-spacing: var(--type-caption-sm-tracking);
   white-space: nowrap;
 }
+/* Stage reserves a fixed height via an invisible "ghost" of the tallest (completed)
+   frame; the live layer floats on top and animates without reflowing the card. The
+   ghost adapts the reserved height to the current width (text wrapping), so there are
+   no magic pixel heights. `contain` stops scroll anchoring from fighting the loop. */
+.web-mock__stage { position: relative; contain: layout paint; }
+.web-mock__ghost { visibility: hidden; pointer-events: none; }
+.web-mock__layer { position: absolute; inset: 0; }
+.web-mock__frame { display: flex; flex-direction: column; gap: var(--space-md); }
+
 .web-mock .vy-row { align-items: flex-start; }
 .web-mock .vy-row__label { font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line); }
 .web-mock .vy-row__key { flex: none; }

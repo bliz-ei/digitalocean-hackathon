@@ -41,42 +41,18 @@ function prefersReducedMotion():boolean{
     && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches===true;
 }
 
-/** The hero overlay mockup, rebuilt from @verity/ui parts and driven by
- *  replayTimeline(heroTimeline, …, {loop:true}). Transcript lines stream in, the
- *  factual claim is flagged, "Verity is checking…" shows, then the Misleading
- *  verdict resolves; the loop holds and restarts. Under prefers-reduced-motion we
- *  render the frozen completed-verdict frame with no timers. */
-export function HeroReplay(){
-  const reduced=useMemo(prefersReducedMotion,[]);
-  const [state,setState]=useState<ReplayState>(()=>reduced
-    ? {transcripts:FROZEN_TRANSCRIPTS,claim:heroClaim}
-    : {transcripts:[],claim:null});
-  const stateRef=useRef(state);
-  stateRef.current=state;
-
-  useEffect(()=>{
-    if(reduced)return;
-    const cancel=replayTimeline(heroTimeline,(env:HeroEnvelope)=>{
-      setState(reduce(stateRef.current,env));
-    },{loop:true});
-    return cancel;
-  },[reduced]);
-
-  const status=statusFor(state);
-  const {claim}=state;
+/** One frame of the overlay body: the transcript palette plus the checking panel or
+ *  the resolved verdict. Rendered twice — an invisible ghost fixed to the tallest
+ *  (completed) frame to reserve height, and the live animating layer on top — so the
+ *  mock never reflows as rows and the verdict stream in. */
+function Frame({transcripts,claim}:ReplayState){
   const verdict=claim?.verdict??null;
   const isCandidate=!!claim && claim.state!=="COMPLETE";
   const sources=verdict?claim!.evidence.filter(item=>verdict.citation_ids.includes(item.id)):[];
-
   return (
-    <div className="web-mock" aria-label="Verity overlay demo">
-      <div className="web-mock__bar">
-        <span className="web-mock__tag">Verity overlay</span>
-        <StatusChip state={status}/>
-      </div>
-
+    <div className="web-mock__frame">
       <PaletteCard dots title="youtube.com/watch — live debate">
-        {state.transcripts.map(seg=>{
+        {transcripts.map(seg=>{
           const flagged=!!claim && seg.text===claim.exact_text;
           return (
             <PaletteRow
@@ -109,6 +85,50 @@ export function HeroReplay(){
           </div>
         </article>
       )}
+    </div>
+  );
+}
+
+/** The hero overlay mockup, rebuilt from @verity/ui parts and driven by
+ *  replayTimeline(heroTimeline, …, {loop:true}). Transcript lines stream in, the
+ *  factual claim is flagged, "Verity is checking…" shows, then the Misleading
+ *  verdict resolves; the loop holds and restarts. Under prefers-reduced-motion we
+ *  render the frozen completed-verdict frame with no timers. */
+export function HeroReplay(){
+  const reduced=useMemo(prefersReducedMotion,[]);
+  const [state,setState]=useState<ReplayState>(()=>reduced
+    ? {transcripts:FROZEN_TRANSCRIPTS,claim:heroClaim}
+    : {transcripts:[],claim:null});
+  const stateRef=useRef(state);
+  stateRef.current=state;
+
+  useEffect(()=>{
+    if(reduced)return;
+    const cancel=replayTimeline(heroTimeline,(env:HeroEnvelope)=>{
+      setState(reduce(stateRef.current,env));
+    },{loop:true});
+    return cancel;
+  },[reduced]);
+
+  const status=statusFor(state);
+
+  return (
+    <div className="web-mock" aria-label="Verity overlay demo">
+      <div className="web-mock__bar">
+        <span className="web-mock__tag">Verity overlay</span>
+        <StatusChip state={status}/>
+      </div>
+
+      <div className="web-mock__stage">
+        {/* Ghost: the tallest (completed) frame, invisible, reserves the stage height
+            at every width so the live layer below can animate without reflow. */}
+        <div className="web-mock__ghost" aria-hidden="true">
+          <Frame transcripts={FROZEN_TRANSCRIPTS} claim={heroClaim}/>
+        </div>
+        <div className="web-mock__layer">
+          <Frame transcripts={state.transcripts} claim={state.claim}/>
+        </div>
+      </div>
     </div>
   );
 }
