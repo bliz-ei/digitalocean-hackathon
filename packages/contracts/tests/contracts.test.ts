@@ -1,3 +1,4 @@
 import {describe,expect,it} from "vitest";
-import {claimStates} from "../src/index";
+import {claimStates,type ClassificationResult,type WsEnvelope} from "../src/index";
 describe("contracts",()=>{it("preserves canonical state order",()=>expect(claimStates.slice(0,7)).toEqual(["CAPTURING","TRANSCRIBING","CLAIM_CANDIDATE","CHECKING","EVIDENCE_READY","SYNTHESIZING","COMPLETE"]));});
+describe("phase 2 contracts",()=>{it("keeps classification separate from verdicts",()=>{const result:ClassificationResult={candidate_id:"c",classification:"opinion",normalized_claim:null,neutral_queries:[],support_queries:[],counter_queries:[],prompt_version:"phase2-v1",provider:"recorded",model:"deterministic"};const envelope:WsEnvelope<ClassificationResult>={type:"classification_result",schema_version:"2",session_id:"s",sequence:1,payload:result};expect(envelope.payload).not.toHaveProperty("verdict")})});

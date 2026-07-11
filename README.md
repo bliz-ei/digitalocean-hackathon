@@ -20,6 +20,12 @@ Open `http://localhost:5173` and choose **Start fixture demo**. Nothing starts a
 
 No live credentials or network providers are used. Fixture mode does not accept or retain audio. Do not put credentials, raw provider responses, or private user data in fixtures or logs.
 
+## Phase 2 live transcript path
+
+Build and reload the unpacked extension, open a YouTube video, then choose **Start live listening**. The offscreen runtime preserves audible tab playback, sends bounded one-second WebM/Opus chunks with acknowledgements and short reconnect replay, and renders canonical final transcript/checking events in the overlay.
+
+The checked-in server uses the disclosed recorded STT/classifier adapters so CI and local demos need no credentials. A user-key classifier can be supplied through the extension-local `verityProvider` configuration (`baseUrl`, `apiKey`, and `model`); the key is used only by the offscreen provider request and is never sent to the Verity backend. The managed live STT adapter remains gated on a Phase 0 provider/device decision and must not be represented as verified until the three real-device hero runs pass.
+
 ## Verification
 
 ```sh
