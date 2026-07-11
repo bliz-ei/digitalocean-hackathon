@@ -1,0 +1,424 @@
+/* Verity components — plain CSS, vy- prefix. Every color/space/radius/type value
+   references a token from tokens.css. Zero hardcoded design values. */
+
+/* ============================ Button ============================ */
+.vy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 36px;
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid transparent;
+  border-radius: var(--rounded-md);
+  font-family: var(--font-sans);
+  font-size: var(--type-button-md-size);
+  font-weight: var(--type-button-md-weight);
+  line-height: var(--type-button-md-line);
+  letter-spacing: var(--type-button-md-tracking);
+  font-feature-settings: var(--font-feature-body);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.vy-btn--primary { background: var(--color-primary); color: var(--color-on-primary); }
+.vy-btn--primary:active { background: var(--color-primary-pressed); }
+.vy-btn--secondary { background: transparent; color: var(--color-on-dark); }
+.vy-btn--secondary:active { background: var(--color-surface-elevated); }
+.vy-btn--tertiary { background: var(--color-surface-elevated); color: var(--color-on-dark); }
+.vy-btn--tertiary:active { background: var(--color-surface-card); }
+.vy-btn--install {
+  background: transparent;
+  color: var(--color-on-dark);
+  border-color: var(--color-hairline-strong);
+  min-height: unset;
+  padding: var(--space-xs) var(--space-md);
+}
+.vy-btn--install:active { background: var(--color-surface-elevated); }
+.vy-btn:disabled,
+.vy-btn[aria-disabled="true"] {
+  background: var(--color-surface-elevated);
+  color: var(--color-ash);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+/* ============================ VerdictBadge ============================ */
+.vy-verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xxs) var(--space-sm);
+  border-radius: var(--rounded-xs);
+  font-size: var(--type-caption-sm-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+}
+.vy-verdict-badge--supported { background: var(--color-accent-green-soft); color: var(--color-accent-green); }
+.vy-verdict-badge--misleading { background: var(--color-accent-yellow-soft); color: var(--color-accent-yellow); }
+.vy-verdict-badge--unsupported { background: var(--color-accent-red-soft); color: var(--color-accent-red); }
+.vy-verdict-badge--disputed { background: var(--color-accent-blue-soft); color: var(--color-accent-blue); }
+.vy-verdict-badge--insufficient { background: var(--color-surface-elevated); color: var(--color-mute); }
+
+/* ============================ ConfidenceMeter ============================ */
+.vy-confidence { display: flex; flex-direction: column; gap: var(--space-xs); }
+.vy-confidence__label {
+  font-size: var(--type-body-sm-strong-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-body-sm-strong-line);
+  letter-spacing: var(--type-body-sm-strong-tracking);
+  color: var(--color-ink);
+}
+.vy-confidence__meter { display: flex; gap: var(--space-xs); }
+.vy-confidence__seg {
+  height: var(--space-xs);
+  flex: 1 1 0;
+  border-radius: var(--rounded-full);
+  background: var(--color-surface-elevated);
+}
+.vy-confidence__seg--on { background: var(--color-on-dark-mute); }
+.vy-confidence__caption {
+  font-size: var(--type-caption-sm-size);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+  color: var(--color-mute);
+}
+
+/* ============================ CitationCard ============================ */
+.vy-citation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+}
+.vy-citation__chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.vy-citation__title {
+  font-size: var(--type-heading-sm-size);
+  font-weight: var(--type-heading-sm-weight);
+  line-height: var(--type-heading-sm-line);
+  letter-spacing: var(--type-heading-sm-tracking);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.vy-citation__title:focus-visible { text-decoration: underline; }
+.vy-citation__meta {
+  font-size: var(--type-caption-md-size);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-mute);
+}
+.vy-citation__url {
+  font-size: var(--type-caption-md-size);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-mute);
+  word-break: break-all;
+}
+.vy-citation__url:focus-visible { text-decoration: underline; }
+.vy-citation__excerpt {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-left: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface);
+  border-radius: var(--rounded-xs);
+  font-size: var(--type-body-sm-size);
+  line-height: var(--type-body-sm-line);
+  color: var(--color-body);
+  font-style: italic;
+}
+
+/* Small mono chip family shared by stance + tier. */
+.vy-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xxs) var(--space-sm);
+  border-radius: var(--rounded-xs);
+  font-size: var(--type-caption-sm-size);
+  line-height: var(--type-caption-sm-line);
+  letter-spacing: var(--type-caption-sm-tracking);
+  background: var(--color-surface-card);
+  color: var(--color-on-dark-mute);
+  border: 1px solid var(--color-hairline);
+}
+.vy-chip--supports { color: var(--color-accent-green); }
+.vy-chip--challenges { color: var(--color-accent-yellow); }
+.vy-chip--tier { color: var(--color-mute); }
+
+/* ============================ StatusChip ============================ */
+.vy-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--rounded-full);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-hairline);
+  font-size: var(--type-caption-md-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-body);
+}
+.vy-status-chip__dot {
+  width: var(--space-sm);
+  height: var(--space-sm);
+  border-radius: var(--rounded-full);
+  background: var(--color-ash);
+  flex: none;
+}
+.vy-status-chip--active { color: var(--color-ink); }
+.vy-status-chip--active .vy-status-chip__dot { background: var(--color-on-dark); animation: vy-pulse 1.6s ease-in-out infinite; }
+.vy-status-chip--completed .vy-status-chip__dot { background: var(--color-accent-green); }
+.vy-status-chip--failed .vy-status-chip__dot { background: var(--color-accent-red); }
+@keyframes vy-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .vy-status-chip--active .vy-status-chip__dot { animation: none; }
+}
+
+/* ============================ Keycap ============================ */
+.vy-keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 1px var(--space-sm);
+  border-radius: var(--rounded-xs);
+  border: 1px solid var(--color-hairline);
+  background: linear-gradient(180deg, var(--color-key-bg-start), var(--color-key-bg-end));
+  color: var(--color-body);
+  font-size: var(--type-caption-md-size);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+}
+
+/* ============================ AppIconTile ============================ */
+.vy-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--rounded-md);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  overflow: hidden;
+}
+.vy-tile--lg { width: 64px; height: 64px; }
+
+/* ============================ PillTab ============================ */
+.vy-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--rounded-full);
+  background: transparent;
+  border: none;
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-sm-size);
+  line-height: var(--type-body-sm-line);
+  letter-spacing: var(--type-body-sm-tracking);
+  font-feature-settings: var(--font-feature-body);
+  cursor: pointer;
+}
+.vy-pill--active { background: var(--color-surface-elevated); color: var(--color-on-dark); }
+
+/* ============================ TextInput ============================ */
+.vy-field { display: flex; flex-direction: column; gap: var(--space-xs); }
+.vy-field__label {
+  font-size: var(--type-body-sm-strong-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-body-sm-strong-line);
+  letter-spacing: var(--type-body-sm-strong-tracking);
+  color: var(--color-ink);
+}
+.vy-field__input {
+  min-height: 36px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-md);
+  color: var(--color-on-dark);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-line);
+  font-feature-settings: var(--font-feature-body);
+}
+.vy-field__input::placeholder { color: var(--color-ash); }
+.vy-field__input:focus { outline: none; border-color: var(--color-hairline-strong); }
+.vy-field__input:focus-visible { outline: none; border-color: var(--color-hairline-strong); }
+.vy-field--error .vy-field__input { border-color: var(--color-accent-red); }
+.vy-field__help {
+  font-size: var(--type-caption-md-size);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-mute);
+}
+.vy-field__error {
+  font-size: var(--type-caption-md-size);
+  line-height: var(--type-caption-md-line);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-accent-red);
+}
+
+/* ============================ PaletteCard / PaletteRow ============================ */
+.vy-palette {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  overflow: hidden;
+}
+.vy-palette__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.vy-palette__dots { display: inline-flex; gap: var(--space-xs); }
+.vy-palette__dot { width: var(--space-md); height: var(--space-md); border-radius: var(--rounded-full); background: var(--color-surface-card); border: 1px solid var(--color-hairline); }
+.vy-palette__title {
+  font-size: var(--type-body-sm-strong-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-body-sm-strong-line);
+  letter-spacing: var(--type-body-sm-strong-tracking);
+  color: var(--color-mute);
+}
+.vy-palette__body { display: flex; flex-direction: column; gap: var(--space-xxs); padding: var(--space-sm); }
+.vy-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--rounded-sm);
+  background: transparent;
+  color: var(--color-on-dark);
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-feature-settings: var(--font-feature-body);
+}
+.vy-row--active { background: var(--color-surface-card); }
+.vy-row__label {
+  flex: 1 1 auto;
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-line);
+  color: var(--color-on-dark);
+}
+.vy-row__icon { flex: none; display: inline-flex; }
+
+/* ============================ VerityMark / Wordmark ============================ */
+.vy-mark { display: inline-flex; align-items: center; justify-content: center; }
+.vy-wordmark { display: inline-flex; align-items: center; gap: var(--space-sm); }
+.vy-wordmark__text {
+  font-size: var(--type-heading-md-size);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  letter-spacing: var(--type-heading-md-tracking);
+  color: var(--color-ink);
+  font-feature-settings: var(--font-feature-body);
+}
+
+/* ============================ StatusCard ============================ */
+.vy-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  color: var(--color-body);
+}
+.vy-status-card__eyebrow {
+  font-size: var(--type-caption-sm-size);
+  letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+.vy-status-card__title {
+  font-size: var(--type-heading-md-size);
+  font-weight: var(--type-heading-md-weight);
+  line-height: var(--type-heading-md-line);
+  letter-spacing: var(--type-heading-md-tracking);
+  color: var(--color-ink);
+}
+.vy-status-card__body {
+  font-size: var(--type-body-sm-size);
+  line-height: var(--type-body-sm-line);
+  color: var(--color-body);
+}
+
+/* ============================ VerdictCard ============================ */
+.vy-verdict-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+  max-width: 720px;
+}
+.vy-verdict-card__head { display: flex; flex-direction: column; gap: var(--space-sm); }
+.vy-verdict-card__eyebrow {
+  font-size: var(--type-caption-sm-size);
+  letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+.vy-verdict-card__topline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md); }
+.vy-verdict-card__claim {
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  border-left: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-elevated);
+  border-radius: var(--rounded-xs);
+  font-size: var(--type-body-lg-size);
+  line-height: var(--type-body-lg-line);
+  color: var(--color-ink);
+}
+.vy-verdict-card__speaker {
+  font-size: var(--type-caption-md-size);
+  letter-spacing: var(--type-caption-md-tracking);
+  color: var(--color-mute);
+}
+
+/* Trust rule: evidence zone vs interpretation zone are visually distinct surfaces. */
+.vy-zone { display: flex; flex-direction: column; gap: var(--space-md); padding: var(--space-lg); border-radius: var(--rounded-md); }
+.vy-zone--evidence { background: var(--color-surface-elevated); border: 1px solid var(--color-hairline); }
+.vy-zone--read { background: var(--color-canvas); border: 1px solid var(--color-hairline-strong); }
+.vy-zone__label {
+  font-size: var(--type-body-sm-strong-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-body-sm-strong-line);
+  letter-spacing: var(--type-body-sm-strong-tracking);
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+.vy-zone__grid { display: flex; flex-direction: column; gap: var(--space-md); }
+.vy-zone__block { display: flex; flex-direction: column; gap: var(--space-xs); }
+.vy-zone__block h4 {
+  margin: 0;
+  font-size: var(--type-body-sm-strong-size);
+  font-weight: var(--type-body-sm-strong-weight);
+  line-height: var(--type-body-sm-strong-line);
+  letter-spacing: var(--type-body-sm-strong-tracking);
+  color: var(--color-charcoal);
+}
+.vy-zone__block p {
+  margin: 0;
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-line);
+  color: var(--color-body);
+}
+.vy-citations { display: flex; flex-direction: column; gap: var(--space-md); }

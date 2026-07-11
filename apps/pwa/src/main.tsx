@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { api, type Claim, type PairedDevice } from "@verity/contracts";
-import { StatusCard, VerdictCard } from "@verity/ui";
+import { StatusCard, VerdictCard, Button, TextInput } from "@verity/ui";
 
 const base = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const publicId = decodeURIComponent(location.pathname.match(/^\/claims\/([^/]+)/)?.[1] ?? "");
@@ -73,20 +73,20 @@ function App() {
     } catch { setStatus("Demo fallback failed"); }
   }
 
-  if (claim) return <main><VerdictCard claim={claim} /></main>;
-  return <main>
+  if (claim) return <main className="vy-root"><VerdictCard claim={claim} /></main>;
+  return <main className="vy-root">
     <StatusCard state={status} />
-    {!device ? <section className="verity-card">
-      <h2>Connect this iPhone</h2>
-      <p>Open Verity from your Home Screen, then enter the six-digit code shown on your desktop.</p>
-      {!redemptionToken&&<label>Pairing code <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} /></label>}
-      <button disabled={!redemptionToken&&code.length !== 6} onClick={pair}>{redemptionToken?"Connect this device":"Pair device"}</button>
-    </section> : <section className="verity-card">
-      <h2>{device.device_label}</h2>
-      <button onClick={enableNotifications}>Enable notifications</button>
-      <button onClick={disableNotifications}>Disable notifications</button>
+    {!device ? <section className="vy-status-card">
+      <h2 className="vy-status-card__title">Connect this iPhone</h2>
+      <p className="vy-status-card__body">Open Verity from your Home Screen, then enter the six-digit code shown on your desktop.</p>
+      {!redemptionToken&&<TextInput label="Pairing code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />}
+      <Button disabled={!redemptionToken&&code.length !== 6} onClick={pair}>{redemptionToken?"Connect this device":"Pair device"}</Button>
+    </section> : <section className="vy-status-card">
+      <h2 className="vy-status-card__title">{device.device_label}</h2>
+      <Button onClick={enableNotifications}>Enable notifications</Button>
+      <Button variant="secondary" onClick={disableNotifications}>Disable notifications</Button>
     </section>}
-    <section className="verity-card"><button onClick={fixtureDemo}>Start fixture demo</button><small>Disclosed fallback using checked-in evidence.</small></section>
+    <section className="vy-status-card"><Button variant="tertiary" onClick={fixtureDemo}>Start fixture demo</Button><small className="vy-status-card__body">Disclosed fallback using checked-in evidence.</small></section>
   </main>;
 }
 
