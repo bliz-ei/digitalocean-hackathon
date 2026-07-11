@@ -6,6 +6,7 @@ CREATE TABLE pairing_challenges (
   attempts integer NOT NULL DEFAULT 0,
   expires_at timestamptz NOT NULL,
   redeemed_at timestamptz,
+  redeemed_device_id text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX pairing_challenges_expiry_idx ON pairing_challenges(expires_at);

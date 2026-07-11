@@ -57,7 +57,10 @@ class SQLiteRepository(Repository):
 class PostgresRepository(Repository):
     def __init__(self, database_url: str):
         import psycopg
-        self.db = psycopg.connect(database_url)
+        # Reads must not leave an implicit outer transaction open: write methods
+        # use explicit transaction blocks and other services need to observe those
+        # commits immediately (notably post-commit push delivery).
+        self.db = psycopg.connect(database_url, autocommit=True)
 
     def create_session(self, key: str, session_id: str) -> str:
         with self.db.transaction():

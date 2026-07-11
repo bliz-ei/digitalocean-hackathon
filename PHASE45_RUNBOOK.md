@@ -1,42 +1,43 @@
-# Verity Phase 4/5 runbook
+# Verity release and demo runbook
 
-## Required runtime secrets
+## Deployment inputs
 
-- `VERITY_DATABASE_URL`
-- `VERITY_PAIRING_SECRET` (32+ random bytes)
-- `VAPID_PUBLIC_KEY`
-- `VAPID_PRIVATE_KEY`
-- `VAPID_SUBJECT` (a `mailto:` or HTTPS contact)
-- `VERITY_ALLOWED_ORIGINS` (exact PWA origins, comma-separated)
+- The App Platform development PostgreSQL database declared in `infra/app.yaml` (or replace its
+  `${db.DATABASE_URL}` binding with a production database URL).
+- `VERITY_PAIRING_SECRET`: at least 32 random characters.
+- `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: one matching Web Push key pair.
+- `VAPID_SUBJECT`: a `mailto:` or HTTPS contact.
 
-Build the PWA and extension with `VITE_API_URL=https://<api-host>`.
+The App Platform spec binds the public app URL into both `VITE_API_URL` and
+`VERITY_ALLOWED_ORIGINS`. Its pre-deploy job applies each migration exactly once and rejects
+edited migrations that have already been applied.
 
-## Cross-device rehearsal
+## Deploy
 
-1. Install the PWA from Safari using Add to Home Screen and launch that installed app.
-2. Start fixture or live mode in the desktop extension.
-3. Enter the six-digit overlay code on the phone.
-4. Tap **Enable notifications**. Permission is never requested before this gesture.
-5. Lock the phone. Complete a fixture verdict; Phase 3 must call `cross_device.notify(...)` after its live verdict commit.
-6. Tap the notification and confirm `/claims/{public_id}` matches the desktop canonical result.
-7. Repeat three times and verify only one notification per claim/subscription.
+1. Merge the release PR to `main`.
+2. Create or update the App Platform app from `infra/app.yaml` and provide the four secrets/settings above.
+3. Confirm the `migrate` pre-deploy job succeeds before the API and PWA become healthy.
+4. Set `VERITY_HEALTH_URL` to the deployed app URL and run `npm run preflight:release`.
+5. Build the unpacked Chrome extension with the same app URL:
+   `VITE_API_URL=https://<app-host> npm run build -w @verity/extension`.
 
-## Release preflight
+## Three-run demo rehearsal
 
-```sh
-npm ci
-npm test
-npm run typecheck
-npm run build
-npm run contracts:check
-npm run preflight
-```
+For each run, create a fresh session and use a fresh claim:
 
-Run migrations through `003_cross_device.sql`, deploy one API instance, then verify `/healthz` and `/readyz`. The API must remain single-instance while live WebSocket state is in memory.
+1. Open YouTube and start Verity from the extension.
+2. Pair the iPhone by entering the six-digit code in the Home Screen-installed PWA.
+3. Tap **Enable notifications**. Verify iOS reports permission granted.
+4. Lock the iPhone, run the fixture, and wait for the verdict notification.
+5. Tap it and confirm the public claim page matches the desktop verdict and citations.
+6. Confirm exactly one notification arrived. Save a screen recording and the claim URL.
 
-## Explicit limitations
+Run once in deterministic fixture mode, once with BYOK enabled, and once from a clean browser/PWA
+session. Keep the best deterministic run as the recorded three-minute demo; use live mode only as
+an additional proof point.
 
-- Phase 3 is not on `main`; the live pipeline currently stops at `CHECKING`. Fixture completion exercises the notification hook today.
-- Pairing/push coordinator state is in-process until the repository adapter is switched to the migration-backed tables. A restart invalidates active pairings in this branch.
-- Real iPhone delivery requires HTTPS, a Home Screen PWA, valid VAPID keys, and a real-device rehearsal.
-- BYOK keys use local extension storage as a prototype safeguard, not production encrypted custody.
+## Known architectural constraint
+
+Keep the API at one instance for the hackathon. Claims, pairing, subscriptions, verdicts, and push
+outcomes are durable in PostgreSQL, but active WebSocket session coordination is process-local.
+Real iPhone delivery requires HTTPS, a Home Screen PWA, valid VAPID keys, and a physical-device test.
