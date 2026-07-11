@@ -1,19 +1,20 @@
 import type {CSSProperties} from "react";
 
-/* Minimal checkmark-with-citation motif: a verdict check above a cited source line.
-   Strokes inherit currentColor so the mark reads white on the deep-ink brand tile (v2 §3). */
+/* Verity mark: a bold, tight hollow circle with the verdict check + cited-source
+   underline layered on top, tips crossing the ring (outline-logo restyle). Ring and
+   strokes read ink via currentColor over a white disc, matching the rasterized icons. */
 function Glyph({size}:{size:number}){
   return <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
-    <path d="M8 15.5l4.5 4.5L24 8.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M11 24.5h10" stroke="currentColor" strokeOpacity="0.55" strokeWidth="2" strokeLinecap="round"/>
+    <circle cx="16" cy="16" r="9.2" fill="#ffffff" stroke="currentColor" strokeWidth="2.8"/>
+    <path d="M10.75 14.25l3 3L22 10.25" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M11 21.75h10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>;
 }
 
 export function VerityMark({size=48,title="Verity",style}:{size?:number;title?:string;style?:CSSProperties}){
-  const inner=Math.round(size*0.58);
-  return <span className={`vy-mark vy-tile vy-tile--brand${size>=64?" vy-tile--lg":""}`} role="img" aria-label={title}
-    style={{width:size,height:size,...style}}>
-    <Glyph size={inner}/>
+  return <span className="vy-mark" role="img" aria-label={title}
+    style={{width:size,height:size,color:"var(--color-ink)",...style}}>
+    <Glyph size={size}/>
   </span>;
 }
 
