@@ -380,8 +380,22 @@ GRADIENT_OUTPUT_INSTRUCTIONS = """Return JSON only, with no markdown, using exac
 Use source_type=kb only for a knowledge-base document. For kb items, use the canonical URL and title from the knowledge-base instructions. Never invent, paraphrase, or combine excerpts. Return {"items":[]} when no passage is available."""
 
 
+def resolve_gradient_agent_credentials() -> tuple[tuple[str, str], tuple[str, str]] | None:
+    """Return ((support_endpoint, support_key), (counter_endpoint, counter_key)) when configured."""
+    support = (os.getenv("VERITY_GRADIENT_SUPPORT_ENDPOINT", "").strip(), os.getenv("VERITY_GRADIENT_SUPPORT_KEY", "").strip())
+    counter = (os.getenv("VERITY_GRADIENT_COUNTER_ENDPOINT", "").strip(), os.getenv("VERITY_GRADIENT_COUNTER_KEY", "").strip())
+    legacy = (os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", "").strip(), os.getenv("VERITY_GRADIENT_AGENT_KEY", "").strip())
+    if support[0] or support[1] or counter[0] or counter[1]:
+        if not all(support) or not all(counter):
+            return None
+        return support, counter  # type: ignore[return-value]
+    if all(legacy):
+        return legacy, legacy
+    return None
+
+
 class GradientEvidenceCollector:
-    """One Gradient agent: PDF knowledge base first, web-search tool fallback.
+    """Support and counter Gradient agents: PDF knowledge base first, web-search fallback.
 
     Agent output is untrusted. Every item must verify against text captured
     independently of the model's prose — the knowledge-base retrieval chunks
@@ -390,9 +404,20 @@ class GradientEvidenceCollector:
 
     name = "gradient"
 
-    def __init__(self, endpoint: str, api_key: str, fetcher: PageFetcher, timeout: float = 8.0):
-        self.endpoint = endpoint.rstrip("/")
-        self.api_key = api_key
+    def __init__(
+        self,
+        fetcher: PageFetcher,
+        *,
+        support_endpoint: str,
+        support_key: str,
+        counter_endpoint: str,
+        counter_key: str,
+        timeout: float = 8.0,
+    ):
+        self.agents = {
+            SearchRole.support: (support_endpoint.rstrip("/"), support_key),
+            SearchRole.counter: (counter_endpoint.rstrip("/"), counter_key),
+        }
         self.fetcher = fetcher
         self.timeout = timeout
 
@@ -418,6 +443,7 @@ class GradientEvidenceCollector:
         return records
 
     def _request(self, claim: Claim, role: SearchRole, queries: list[str]) -> dict:
+        endpoint, api_key = self.agents[role]
         content = (
             f"{GRADIENT_ROLE_INSTRUCTIONS[role]}\n"
             f"{GRADIENT_OUTPUT_INSTRUCTIONS}\n"
@@ -434,9 +460,9 @@ class GradientEvidenceCollector:
             }
         ).encode()
         request = Request(
-            f"{self.endpoint}/api/v1/chat/completions",
+            f"{endpoint}/api/v1/chat/completions",
             data=payload,
-            headers={"authorization": f"Bearer {self.api_key}", "content-type": "application/json"},
+            headers={"authorization": f"Bearer {api_key}", "content-type": "application/json"},
             method="POST",
         )
         for attempt in range(2):
@@ -621,9 +647,16 @@ def configured_evidence_providers() -> tuple[EvidenceCollector, ReasoningModel]:
     )
     if os.getenv("VERITY_EVIDENCE") == "recorded":
         return recorded_collector, reasoner
-    gradient_values = (os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT"), os.getenv("VERITY_GRADIENT_AGENT_KEY"))
-    if all(gradient_values):
-        gradient = GradientEvidenceCollector(gradient_values[0], gradient_values[1], SafePageFetcher())  # type: ignore[arg-type]
+    gradient_agents = resolve_gradient_agent_credentials()
+    if gradient_agents:
+        (support_endpoint, support_key), (counter_endpoint, counter_key) = gradient_agents
+        gradient = GradientEvidenceCollector(
+            SafePageFetcher(),
+            support_endpoint=support_endpoint,
+            support_key=support_key,
+            counter_endpoint=counter_endpoint,
+            counter_key=counter_key,
+        )
         return FallbackEvidenceCollector(gradient, recorded_collector), reasoner
     search_values = (os.getenv("VERITY_SEARCH_URL"), os.getenv("VERITY_SEARCH_API_KEY"))
     if all(search_values):

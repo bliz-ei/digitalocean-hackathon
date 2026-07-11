@@ -35,10 +35,10 @@ It solves:
 
 - **Live claim detection:** tab audio streams to Deepgram; an LLM classifies sentences as
   opinion, factual claim, or unverifiable; no truth-judging at this stage.
-- **Grounded evidence, not model memory:** one DigitalOcean Gradient agent retrieves
-  support *and* counterevidence: curated PDF knowledge base first, web-search tool as
-  controlled fallback. Excerpts that don't match the agent's own retrieval chunks (or an
-  SSRF-guarded page re-fetch) are dropped.
+- **Grounded evidence, not model memory:** two DigitalOcean Gradient agents retrieve
+  support and counterevidence in parallel: curated PDF knowledge base first, web-search
+  tool as controlled fallback. Excerpts that don't match the agent's own retrieval chunks
+  (or an SSRF-guarded page re-fetch) are dropped.
 - **Deterministic verdict validation:** drafts must cite known evidence IDs from ≥2
   independent credible sources and pass label/confidence/support checks, or the claim
   fails closed to *Insufficient evidence*.
@@ -76,13 +76,13 @@ independent: each stage falls back to its disclosed recorded fixture when unset.
 |---|---|---|
 | STT | `VERITY_STT_API_KEY` (Deepgram) | recorded transcript |
 | Classifier | `VERITY_FAST_BASE_URL` / `_API_KEY` / `_MODEL` | recorded (hero claim only) |
-| Evidence | `VERITY_GRADIENT_AGENT_ENDPOINT` / `_KEY` | recorded evidence |
+| Evidence | `VERITY_GRADIENT_SUPPORT_*` and `VERITY_GRADIENT_COUNTER_*` (legacy single `VERITY_GRADIENT_AGENT_*` works for both roles) | recorded evidence |
 | Reasoner | `VERITY_REASONING_BASE_URL` / `_API_KEY` / `_MODEL` | recorded drafts |
 | Push | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | notifications no-op |
 
 Gradient serverless inference (`https://inference.do-ai.run`) serves both model stages
 with one key. Kill-switches: `VERITY_STT=recorded`, `VERITY_EVIDENCE=recorded`. The
-agent's knowledge base is described by [fixtures/gradient-kb.json](fixtures/gradient-kb.json).
+evidence agents' knowledge base is described by [fixtures/gradient-kb.json](fixtures/gradient-kb.json).
 
 ### Run
 
@@ -108,7 +108,7 @@ YouTube tab audio
   → Chrome extension (MV3 offscreen capture, 1s WebM/Opus chunks over WebSocket)
   → STT adapter (Deepgram | recorded)
   → fast classifier (LLM): opinion / factual claim / unverifiable
-  → evidence collector (Gradient agent: PDF KB + web search | recorded)
+  → evidence collector (two Gradient agents: support + counter, PDF KB + web search | recorded)
   → verdict synthesis (LLM) → deterministic validation (validate_draft)
   → PostgreSQL → browser overlay + iPhone Web Push
 ```
@@ -157,9 +157,14 @@ fails unless `/readyz` reports the real providers:
 
 ```sh
 export DIGITALOCEAN_ACCESS_TOKEN=... VERITY_STT_API_KEY=...
-export VERITY_GRADIENT_AGENT_ENDPOINT=https://<agent-id>.agents.do-ai.run VERITY_GRADIENT_AGENT_KEY=...
+export VERITY_GRADIENT_SUPPORT_ENDPOINT=https://<support-agent>.agents.do-ai.run VERITY_GRADIENT_SUPPORT_KEY=...
+export VERITY_GRADIENT_COUNTER_ENDPOINT=https://<counter-agent>.agents.do-ai.run VERITY_GRADIENT_COUNTER_KEY=...
 pwsh ./scripts/deploy.ps1 -VapidSubject mailto:<team-contact>
 ```
+
+Legacy `VERITY_GRADIENT_AGENT_ENDPOINT` / `VERITY_GRADIENT_AGENT_KEY` still apply to both
+roles when the split values are unset. Deploy runs three live agent/KB smoke attempts and
+release preflight fails unless `/readyz` reports `evidence: gradient`.
 
 Keep the API at **one instance**: WebSocket session state is process-local. For the full
 input list, demo rehearsal protocol, and secret-handling rules, see

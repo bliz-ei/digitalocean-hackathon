@@ -1,6 +1,10 @@
 param(
   [string]$VapidSubject = $env:VAPID_SUBJECT,
   [string]$SttApiKey = $env:VERITY_STT_API_KEY,
+  [string]$GradientSupportEndpoint = $env:VERITY_GRADIENT_SUPPORT_ENDPOINT,
+  [string]$GradientSupportKey = $env:VERITY_GRADIENT_SUPPORT_KEY,
+  [string]$GradientCounterEndpoint = $env:VERITY_GRADIENT_COUNTER_ENDPOINT,
+  [string]$GradientCounterKey = $env:VERITY_GRADIENT_COUNTER_KEY,
   [string]$GradientAgentEndpoint = $env:VERITY_GRADIENT_AGENT_ENDPOINT,
   [string]$GradientAgentKey = $env:VERITY_GRADIENT_AGENT_KEY,
   [string]$AppId = $env:VERITY_APP_ID,
@@ -22,10 +26,18 @@ if (-not $doctlCommand) {
 }
 if (-not $AccessToken) { throw "Set DIGITALOCEAN_ACCESS_TOKEN before deploying." }
 if (-not $SttApiKey) { throw "Set VERITY_STT_API_KEY to a Deepgram API key before deploying." }
-if (-not $GradientAgentEndpoint -or $GradientAgentEndpoint -notmatch '^https://') {
-  throw "Set VERITY_GRADIENT_AGENT_ENDPOINT to the HTTPS inference endpoint for the Gradient agent."
+if (-not $GradientSupportEndpoint) { $GradientSupportEndpoint = $GradientAgentEndpoint }
+if (-not $GradientSupportKey) { $GradientSupportKey = $GradientAgentKey }
+if (-not $GradientCounterEndpoint) { $GradientCounterEndpoint = $GradientAgentEndpoint }
+if (-not $GradientCounterKey) { $GradientCounterKey = $GradientAgentKey }
+if (-not $GradientSupportEndpoint -or $GradientSupportEndpoint -notmatch '^https://') {
+  throw "Set VERITY_GRADIENT_SUPPORT_ENDPOINT (or legacy VERITY_GRADIENT_AGENT_ENDPOINT) to the HTTPS support agent endpoint."
 }
-if (-not $GradientAgentKey) { throw "Set VERITY_GRADIENT_AGENT_KEY to the Gradient agent access key." }
+if (-not $GradientSupportKey) { throw "Set VERITY_GRADIENT_SUPPORT_KEY (or legacy VERITY_GRADIENT_AGENT_KEY) for the support agent." }
+if (-not $GradientCounterEndpoint -or $GradientCounterEndpoint -notmatch '^https://') {
+  throw "Set VERITY_GRADIENT_COUNTER_ENDPOINT (or legacy VERITY_GRADIENT_AGENT_ENDPOINT) to the HTTPS counter agent endpoint."
+}
+if (-not $GradientCounterKey) { throw "Set VERITY_GRADIENT_COUNTER_KEY (or legacy VERITY_GRADIENT_AGENT_KEY) for the counter agent." }
 if (-not $VapidSubject -or $VapidSubject -notmatch '^(mailto:|https://)') {
   throw "Pass -VapidSubject mailto:you@example.com (or set VAPID_SUBJECT)."
 }
@@ -55,8 +67,10 @@ $env:VAPID_PUBLIC_KEY = $saved.vapidPublicKey
 $env:VAPID_PRIVATE_KEY = $saved.vapidPrivateKey
 $env:VAPID_SUBJECT = $VapidSubject
 $env:VERITY_STT_API_KEY = $SttApiKey
-$env:VERITY_GRADIENT_AGENT_ENDPOINT = $GradientAgentEndpoint
-$env:VERITY_GRADIENT_AGENT_KEY = $GradientAgentKey
+$env:VERITY_GRADIENT_SUPPORT_ENDPOINT = $GradientSupportEndpoint
+$env:VERITY_GRADIENT_SUPPORT_KEY = $GradientSupportKey
+$env:VERITY_GRADIENT_COUNTER_ENDPOINT = $GradientCounterEndpoint
+$env:VERITY_GRADIENT_COUNTER_KEY = $GradientCounterKey
 $env:VERITY_ALLOWED_ORIGINS = '${APP_URL}'
 node scripts/run-python.mjs scripts/prepare_deploy.py
 node scripts/run-python.mjs scripts/smoke_gradient.py

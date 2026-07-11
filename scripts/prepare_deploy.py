@@ -10,14 +10,23 @@ parser.add_argument("--template", type=Path, default=ROOT / "infra/app.yaml")
 parser.add_argument("--output", type=Path, default=ROOT / ".verity/app.yaml")
 args = parser.parse_args()
 
+legacy_endpoint = os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", "").strip()
+legacy_key = os.getenv("VERITY_GRADIENT_AGENT_KEY", "").strip()
+support_endpoint = os.getenv("VERITY_GRADIENT_SUPPORT_ENDPOINT", "").strip() or legacy_endpoint
+support_key = os.getenv("VERITY_GRADIENT_SUPPORT_KEY", "").strip() or legacy_key
+counter_endpoint = os.getenv("VERITY_GRADIENT_COUNTER_ENDPOINT", "").strip() or legacy_endpoint
+counter_key = os.getenv("VERITY_GRADIENT_COUNTER_KEY", "").strip() or legacy_key
+
 values = {
     "__VERITY_PAIRING_SECRET__": os.getenv("VERITY_PAIRING_SECRET", ""),
     "__VAPID_PUBLIC_KEY__": os.getenv("VAPID_PUBLIC_KEY", ""),
     "__VAPID_PRIVATE_KEY__": os.getenv("VAPID_PRIVATE_KEY", ""),
     "__VAPID_SUBJECT__": os.getenv("VAPID_SUBJECT", ""),
     "__VERITY_STT_API_KEY__": os.getenv("VERITY_STT_API_KEY", ""),
-    "__VERITY_GRADIENT_AGENT_ENDPOINT__": os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", ""),
-    "__VERITY_GRADIENT_AGENT_KEY__": os.getenv("VERITY_GRADIENT_AGENT_KEY", ""),
+    "__VERITY_GRADIENT_SUPPORT_ENDPOINT__": support_endpoint,
+    "__VERITY_GRADIENT_SUPPORT_KEY__": support_key,
+    "__VERITY_GRADIENT_COUNTER_ENDPOINT__": counter_endpoint,
+    "__VERITY_GRADIENT_COUNTER_KEY__": counter_key,
     "__VERITY_ALLOWED_ORIGINS__": os.getenv("VERITY_ALLOWED_ORIGINS", "${APP_URL}"),
 }
 missing = [token.strip("_") for token, value in values.items() if not value]
@@ -30,9 +39,13 @@ if len(values["__VERITY_PAIRING_SECRET__"]) < 32:
 if not values["__VAPID_SUBJECT__"].startswith(("mailto:", "https://")):
     print("VAPID_SUBJECT must start with mailto: or https://", file=sys.stderr)
     raise SystemExit(2)
-if not values["__VERITY_GRADIENT_AGENT_ENDPOINT__"].startswith("https://"):
-    print("VERITY_GRADIENT_AGENT_ENDPOINT must start with https://", file=sys.stderr)
-    raise SystemExit(2)
+for label, endpoint in (
+    ("VERITY_GRADIENT_SUPPORT_ENDPOINT", values["__VERITY_GRADIENT_SUPPORT_ENDPOINT__"]),
+    ("VERITY_GRADIENT_COUNTER_ENDPOINT", values["__VERITY_GRADIENT_COUNTER_ENDPOINT__"]),
+):
+    if not endpoint.startswith("https://"):
+        print(f"{label} must start with https://", file=sys.stderr)
+        raise SystemExit(2)
 
 rendered = args.template.read_text()
 for token, value in values.items():

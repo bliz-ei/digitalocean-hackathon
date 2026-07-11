@@ -1,4 +1,4 @@
-"""Fail deployment unless the live Gradient agent returns verified, independent evidence."""
+"""Fail deployment unless the live Gradient agents return verified, independent evidence."""
 
 import asyncio
 import json
@@ -7,7 +7,7 @@ import sys
 
 from app.domain.evidence import credible_independent_count
 from app.domain.models import Claim, ClaimState, ClassificationResult, utcnow
-from app.providers.evidence import GradientEvidenceCollector, SafePageFetcher
+from app.providers.evidence import GradientEvidenceCollector, SafePageFetcher, resolve_gradient_agent_credentials
 
 
 def target_claim(attempt: int) -> Claim:
@@ -38,15 +38,28 @@ def target_classification() -> ClassificationResult:
 
 
 async def run() -> None:
-    endpoint = os.getenv("VERITY_GRADIENT_AGENT_ENDPOINT", "")
-    api_key = os.getenv("VERITY_GRADIENT_AGENT_KEY", "")
+    agents = resolve_gradient_agent_credentials()
     attempts = int(os.getenv("VERITY_GRADIENT_SMOKE_ATTEMPTS", "3"))
-    if not endpoint.startswith("https://") or not api_key:
-        raise ValueError("Gradient endpoint and key are required")
+    if not agents:
+        raise ValueError(
+            "Gradient support and counter agents are required "
+            "(VERITY_GRADIENT_SUPPORT_* and VERITY_GRADIENT_COUNTER_*, "
+            "or legacy VERITY_GRADIENT_AGENT_* for both roles)"
+        )
     if attempts < 1 or attempts > 5:
         raise ValueError("VERITY_GRADIENT_SMOKE_ATTEMPTS must be between 1 and 5")
+    (support_endpoint, support_key), (counter_endpoint, counter_key) = agents
+    if not support_endpoint.startswith("https://") or not counter_endpoint.startswith("https://"):
+        raise ValueError("Gradient agent endpoints must start with https://")
 
-    collector = GradientEvidenceCollector(endpoint, api_key, SafePageFetcher(), timeout=12)
+    collector = GradientEvidenceCollector(
+        SafePageFetcher(),
+        support_endpoint=support_endpoint,
+        support_key=support_key,
+        counter_endpoint=counter_endpoint,
+        counter_key=counter_key,
+        timeout=12,
+    )
     results = []
     for attempt in range(1, attempts + 1):
         records = await collector.collect(target_claim(attempt), target_classification())
