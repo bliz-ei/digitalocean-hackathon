@@ -18,6 +18,13 @@
   base documents are listed in `fixtures/gradient-kb.json`.
 - `VERITY_EVIDENCE=recorded` (demo kill-switch: forces recorded evidence even when the
   Gradient agent is configured.)
+- `VERITY_GRADIENT_MODEL_KEY`: one Gradient serverless-inference model access key, reused
+  for both the claim classifier and the verdict reasoner (or set `VERITY_FAST_API_KEY` and
+  `VERITY_REASONING_API_KEY` individually).
+- `VERITY_FAST_MODEL` and `VERITY_REASONING_MODEL`: Gradient serverless model slugs for the
+  classifier (small/fast) and reasoner (larger). Base URLs default to
+  `https://inference.do-ai.run`; override with `VERITY_FAST_BASE_URL` /
+  `VERITY_REASONING_BASE_URL` only for a non-Gradient OpenAI-compatible provider.
 
 The App Platform spec binds the public app URL into both `VITE_API_URL` and
 `VERITY_ALLOWED_ORIGINS`. Its pre-deploy job applies each migration exactly once and rejects
