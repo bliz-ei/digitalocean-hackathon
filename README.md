@@ -1,4 +1,4 @@
-# Verity Phase 1
+# Verity MVP — through Phase 3
 
 Contract-first fixture walking skeleton with a FastAPI service, shared TypeScript contracts/UI, an installable PWA, and an MV3 extension shell.
 
@@ -25,6 +25,22 @@ No live credentials or network providers are used. Fixture mode does not accept 
 Build and reload the unpacked extension, open a YouTube video, then choose **Start live listening**. The offscreen runtime preserves audible tab playback, sends bounded one-second WebM/Opus chunks with acknowledgements and short reconnect replay, and renders canonical final transcript/checking events in the overlay.
 
 The checked-in server uses the disclosed recorded STT/classifier adapters so CI and local demos need no credentials. A user-key classifier can be supplied through the extension-local `verityProvider` configuration (`baseUrl`, `apiKey`, and `model`); the key is used only by the offscreen provider request and is never sent to the Verity backend. The managed live STT adapter remains gated on a Phase 0 provider/device decision and must not be represented as verified until the three real-device hero runs pass.
+
+## Phase 3 evidence and verdict path
+
+Every live factual claim now runs bounded neutral/support/counter searches concurrently, validates URLs, extracts captured page text, clusters duplicate sources, applies stance-independent source tiers, and selects at most six evidence passages. The reasoning model sees only this immutable evidence bundle. Its draft is accepted only after deterministic citation ownership, excerpt, independence, label, confidence, and support checks; one invalid retry is allowed before the claim fails closed.
+
+Without provider configuration, the disclosed `phase3-evidence.json` search, page, and reasoning recordings run through the same validators. To use a compatible live server-side provider, set all of:
+
+```sh
+VERITY_SEARCH_URL=https://search.example/v1/search
+VERITY_SEARCH_API_KEY=...
+VERITY_REASONING_BASE_URL=https://provider.example
+VERITY_REASONING_API_KEY=...
+VERITY_REASONING_MODEL=...
+```
+
+The search adapter accepts a compact `{results:[{title,url,publisher,published_at,snippet}]}` response. URLs and redirects to local, private, link-local, credentialed, unsupported-scheme, or unsupported-port destinations are rejected. API keys, full page text, complete prompts, authorization headers, and provider bodies are not logged. Extension BYOK reasoning uses the same `verityProvider` key directly from the offscreen context; only its structured verdict draft is returned to Verity.
 
 ## Verification
 

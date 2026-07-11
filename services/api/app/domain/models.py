@@ -45,6 +45,37 @@ class SourceTier(StrEnum):
     primary = "primary"
     research = "research"
     established = "established"
+    other = "other"
+
+
+class SearchRole(StrEnum):
+    neutral = "neutral"
+    support = "support"
+    counter = "counter"
+
+
+class SearchResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(min_length=1, max_length=300)
+    url: HttpUrl
+    publisher: str = Field(min_length=1, max_length=160)
+    published_at: datetime | None = None
+    snippet: str = Field(default="", max_length=1_000)
+    rank: int = Field(ge=0)
+    query: str = Field(min_length=1, max_length=240)
+    role: SearchRole
+    provider: str = Field(min_length=1, max_length=80)
+
+
+class ExtractedPage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    canonical_url: HttpUrl
+    title: str = Field(min_length=1, max_length=300)
+    publisher: str = Field(min_length=1, max_length=160)
+    published_at: datetime | None = None
+    retrieved_at: datetime
+    text: str = Field(min_length=1, max_length=500_000)
+    content_hash: str = Field(min_length=16, max_length=128)
 
 
 class Evidence(BaseModel):
@@ -53,11 +84,18 @@ class Evidence(BaseModel):
     title: str
     canonical_url: HttpUrl
     publisher: str
-    published_at: datetime
+    published_at: datetime | None = None
     retrieved_at: datetime
     excerpt: str
     source_tier: SourceTier
     content_hash: str
+    query_role: SearchRole = SearchRole.neutral
+    independent_key: str = Field(default="legacy", min_length=1, max_length=200)
+
+
+class EvidenceRecord(BaseModel):
+    evidence: Evidence
+    captured_text: str = Field(min_length=1, max_length=500_000)
 
 
 class Verdict(BaseModel):
@@ -71,6 +109,21 @@ class Verdict(BaseModel):
     model_provider: str = "fake"
     model_name: str = "hero-fixture"
     prompt_version: str = "phase1"
+
+
+class VerdictDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    claim_public_id: str
+    label: VerdictLabel
+    confidence: float = Field(ge=0, le=1)
+    explanation: str = Field(min_length=1, max_length=700)
+    uncertainty: str = Field(min_length=1, max_length=500)
+    counterevidence_summary: str = Field(min_length=1, max_length=500)
+    common_ground: str | None = Field(default=None, max_length=400)
+    citation_ids: list[str] = Field(min_length=1, max_length=3)
+    model_provider: str = Field(min_length=1, max_length=80)
+    model_name: str = Field(min_length=1, max_length=120)
+    prompt_version: Literal["phase3-v1"] = "phase3-v1"
 
 
 class Claim(BaseModel):
@@ -97,8 +150,12 @@ class Claim(BaseModel):
             owned = {e.id for e in self.evidence}
             if not set(self.verdict.citation_ids) <= owned:
                 raise ValueError("citation does not belong to claim")
+            if len(self.verdict.citation_ids) != len(set(self.verdict.citation_ids)):
+                raise ValueError("citations must be unique")
             if self.verdict.label != VerdictLabel.InsufficientEvidence and not 2 <= len(self.verdict.citation_ids) <= 3:
                 raise ValueError("completed verdict requires 2-3 citations")
+        if self.state == ClaimState.COMPLETE and not self.verdict:
+            raise ValueError("complete claims require a verdict")
         return self
 
 

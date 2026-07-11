@@ -15,6 +15,7 @@ from app.domain.models import (
     utcnow,
 )
 from app.persistence.repository import Repository
+from app.pipeline.evidence import EvidencePipeline
 from app.providers.live import FastClassifier, SttAdapter, SttSession
 
 
@@ -28,6 +29,7 @@ class LiveSession:
     stt_adapter: SttAdapter
     classifier: FastClassifier | None
     emit: EventSink
+    evidence_pipeline: EvidencePipeline | None = None
     max_candidates: int = 4
     ledger: AudioLedger = field(default_factory=AudioLedger)
     assembler: SentenceAssembler = field(default_factory=SentenceAssembler)
@@ -120,6 +122,10 @@ class LiveSession:
             "claim_state",
             {"public_id": claim.public_id, "state": claim.state, "claim": claim.model_dump(mode="json")},
         )
+        if self.evidence_pipeline:
+            task = asyncio.create_task(self.evidence_pipeline.run(claim.model_copy(deep=True), result))
+            self.tasks.add(task)
+            task.add_done_callback(self.tasks.discard)
         return claim
 
     async def stop(self) -> None:

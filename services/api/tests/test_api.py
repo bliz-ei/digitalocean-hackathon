@@ -27,7 +27,8 @@ def test_fixture_pipeline_and_public_read(client):
     body = completed.json()
     assert body["state"] == "COMPLETE"
     assert len(body["evidence"]) == 3
-    assert body["verdict"]["citation_ids"] == ["epa-1", "doe-1", "icct-1"]
+    assert len(body["verdict"]["citation_ids"]) == 3
+    assert {item["publisher"] for item in body["evidence"]} == {"US EPA", "US Department of Energy", "ICCT"}
     assert client.get(f'/v1/claims/{body["public_id"]}').json() == body
 
 def test_websocket_emits_all_pipeline_states_and_replay_does_not_duplicate(client):
@@ -69,6 +70,7 @@ def test_live_websocket_records_finals_and_creates_target_claim_once(client):
         assert claim["exact_text"] == "Electric vehicles produce no carbon emissions."
         assert claim["speaker_label"] == "Speaker B"
         assert claim["state"] == "CHECKING"
+        assert len(claim["public_id"].removeprefix("claim-")) == 32
 
         body = b"opus"
         ws.send_json({
@@ -83,13 +85,15 @@ def test_live_websocket_records_finals_and_creates_target_claim_once(client):
             if event["type"] == "audio_ack":
                 break
         assert not {"transcript_final", "claim_state"} & {event["type"] for event in replay_events}
-        assert client.get(f'/v1/claims/{claim["public_id"]}').json()["state"] == "CHECKING"
+        persisted = client.get(f'/v1/claims/{claim["public_id"]}').json()
+        assert persisted["state"] in {"CHECKING", "EVIDENCE_READY", "SYNTHESIZING", "COMPLETE"}
+        assert persisted["public_id"] == claim["public_id"]
 
-def test_verdict_validation_rejects_foreign_citation(client):
+def test_verdict_endpoint_rejects_claim_not_awaiting_client_synthesis(client):
     session = create_session(client, "verdict")
     claim = client.post(f'/v1/sessions/{session["id"]}/claims').json()
-    verdict = {**claim["verdict"], "citation_ids": ["missing", "doe-1"]}
+    verdict = {**claim["verdict"], "claim_public_id": claim["public_id"], "prompt_version": "phase3-v1"}
     response = client.post(f'/v1/claims/{claim["public_id"]}/verdict', json=verdict)
-    assert response.status_code == 422
+    assert response.status_code == 409
     persisted = client.get(f'/v1/claims/{claim["public_id"]}').json()
     assert persisted["verdict"]["citation_ids"] == claim["verdict"]["citation_ids"]
