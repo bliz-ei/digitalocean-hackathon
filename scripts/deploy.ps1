@@ -4,6 +4,7 @@ param(
   [string]$GradientAgentEndpoint = $env:VERITY_GRADIENT_AGENT_ENDPOINT,
   [string]$GradientAgentKey = $env:VERITY_GRADIENT_AGENT_KEY,
   [string]$AppId = $env:VERITY_APP_ID,
+  [string]$WebAppId = $env:VERITY_WEB_APP_ID,
   [string]$AccessToken = $env:DIGITALOCEAN_ACCESS_TOKEN
 )
 $ErrorActionPreference = "Stop"
@@ -56,6 +57,7 @@ $env:VAPID_SUBJECT = $VapidSubject
 $env:VERITY_STT_API_KEY = $SttApiKey
 $env:VERITY_GRADIENT_AGENT_ENDPOINT = $GradientAgentEndpoint
 $env:VERITY_GRADIENT_AGENT_KEY = $GradientAgentKey
+$env:VERITY_ALLOWED_ORIGINS = '${APP_URL}'
 node scripts/run-python.mjs scripts/prepare_deploy.py
 node scripts/run-python.mjs scripts/smoke_gradient.py
 
@@ -72,9 +74,36 @@ if (-not $id) { throw "DigitalOcean did not return an app ID." }
 $url = (& $doctlCommand --access-token $AccessToken apps get $id --format DefaultIngress --no-header).Trim()
 if (-not $url.StartsWith("http")) { $url = "https://$url" }
 
-$env:VERITY_HEALTH_URL = $url
+$env:VERITY_APP_URL = $url
 $env:VITE_API_URL = $url
+$env:VITE_PWA_URL = $url
+node scripts/run-python.mjs scripts/prepare_web_deploy.py
+$webSpec = Join-Path $stateDir "web.yaml"
+& $doctlCommand @doctlArgs spec validate $webSpec | Out-Null
+if ($WebAppId) {
+  & $doctlCommand @doctlArgs update $WebAppId --spec $webSpec --update-sources --wait | Out-Null
+  $webId = $WebAppId
+} else {
+  $webId = (& $doctlCommand @doctlArgs create --spec $webSpec --wait --format ID --no-header).Trim()
+}
+if (-not $webId) { throw "DigitalOcean did not return a marketing app ID." }
+$webUrl = (& $doctlCommand --access-token $AccessToken apps get $webId --format DefaultIngress --no-header).Trim()
+if (-not $webUrl.StartsWith("http")) { $webUrl = "https://$webUrl" }
+
+# The PWA shares the API origin, but allow the separate marketing origin as well
+# so future marketing-side API calls cannot silently fail CORS.
+$env:VERITY_ALLOWED_ORIGINS = "$url,$webUrl"
+node scripts/run-python.mjs scripts/prepare_deploy.py
+& $doctlCommand @doctlArgs spec validate $spec | Out-Null
+& $doctlCommand @doctlArgs update $id --spec $spec --update-sources --wait | Out-Null
+
+$env:VERITY_HEALTH_URL = $url
 npm run build -w @verity/extension
+npm run build -w @verity/pwa
+npm run build -w @verity/web
+$env:VERITY_WEB_URL = $webUrl
 npm run preflight:release
 Write-Host "Verity deployed and verified at $url"
 Write-Host "App ID: $id (set VERITY_APP_ID to this value for future updates)"
+Write-Host "Marketing site deployed and verified at $webUrl"
+Write-Host "Web app ID: $webId (set VERITY_WEB_APP_ID to this value for future updates)"
