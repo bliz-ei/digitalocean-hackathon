@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/pwa/public/verity-icon.svg" alt="Verity" width="96">
+  <img src="apps/extension/public/icons/icon-128.png" alt="Verity" width="96">
 </p>
 <h1 align="center">Verity</h1>
 <p align="center">
