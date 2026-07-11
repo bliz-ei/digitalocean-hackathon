@@ -49,6 +49,9 @@ def test_postgres_persists_canonical_hero_claim():
             device_id=device.device_id, device_token=device.device_token,
             endpoint="https://push.example/subscription", p256dh="p" * 32, auth="a" * 16,
         ))
+        assert repository.db.execute("SELECT count(*) FROM paired_devices WHERE session_id=%s AND revoked_at IS NULL", (session_id,)).fetchone()[0] == 1
+        assert repository.db.execute("SELECT count(*) FROM push_subscriptions WHERE device_ref=%s AND active=true", (device.device_id,)).fetchone()[0] == 1
+        assert len(cross_device.store.eligible_subscriptions(session_id)) == 1
         assert cross_device.notify(session_id, live_claim.public_id, "CI verdict") == 1
         assert cross_device.notify(session_id, live_claim.public_id, "CI verdict") == 0
         assert len(push.deliveries) == 1
