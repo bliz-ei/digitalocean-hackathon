@@ -23,11 +23,11 @@ for required in ("kind: PRE_DEPLOY", "python scripts/migrate.py", "value: ${APP_
     checks[f"app_spec:{required}"] = required in spec
 
 required_env = (
-    "VERITY_DATABASE_URL",
     "VERITY_PAIRING_SECRET",
     "VAPID_PUBLIC_KEY",
     "VAPID_PRIVATE_KEY",
     "VAPID_SUBJECT",
+    "VERITY_STT_API_KEY",
 )
 if args.release:
     for key in required_env:
@@ -44,6 +44,7 @@ if health_url:
             readiness.get("status") == "ready"
             and readiness.get("repository") == "postgres"
             and readiness.get("push") == "configured"
+            and readiness.get("stt") == "deepgram"
         )
     except Exception:
         checks["deployed_readiness"] = False
