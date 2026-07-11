@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
 from typing import Any
 
 from app.persistence.repository import PostgresRepository, Repository
+
+HERO_FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "hero-demo"
+REQUIRED_FIXTURES = ("hero.json", "phase2-transcript.json", "phase3-evidence.json")
 
 
 def readiness_checks(repository_mode: str, repository: Repository) -> tuple[bool, dict[str, Any]]:
@@ -42,6 +46,14 @@ def readiness_checks(repository_mode: str, repository: Repository) -> tuple[bool
         if repository_mode == "postgres" and not os.getenv("VERITY_PAIRING_SECRET"):
             checks["pairing_secret"] = "missing"
             ok = False
+
+    missing_fixtures = [name for name in REQUIRED_FIXTURES if not (HERO_FIXTURES / name).is_file()]
+    if missing_fixtures:
+        checks["fixtures"] = "missing"
+        checks["missing_fixtures"] = missing_fixtures
+        ok = False
+    else:
+        checks["fixtures"] = "ok"
 
     if not ok:
         checks["status"] = "not_ready"

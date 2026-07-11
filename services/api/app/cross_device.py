@@ -342,7 +342,13 @@ class CrossDeviceCoordinator:
         for subscription in self.store.eligible_subscriptions(session_id):
             if not self.store.reserve_outcome(public_id, subscription.id):
                 continue
-            payload = {"schema_version": "1", "notification_id": f"claim:{public_id}", "public_id": public_id, "title": "Verity found context", "body": summary[:120]}
+            payload = {
+                "schema_version": "1",
+                "notification_id": f"claim:{public_id}",
+                "public_id": public_id,
+                "title": "Verity found missing context",
+                "body": "Tap to inspect 3 sources.",
+            }
             try:
                 result = self.push.send(subscription, payload)
             except Exception:

@@ -23,7 +23,30 @@ function App() {
 
   useEffect(() => {
     if (!publicId) return;
-    api.getClaim(base, publicId).then(setClaim).catch(() => setStatus(navigator.onLine ? "Result not found" : "Offline — reconnect to load this result"));
+    let cancelled = false;
+    let attempts = 0;
+
+    async function loadClaim(): Promise<void> {
+      try {
+        const result = await api.getClaim(base, publicId);
+        if (!cancelled) setClaim(result);
+      } catch {
+        if (!navigator.onLine) {
+          if (!cancelled) setStatus("Offline — reconnect to load this result");
+          return;
+        }
+        attempts += 1;
+        if (attempts >= 8) {
+          if (!cancelled) setStatus("Result not found — pull down to refresh");
+          return;
+        }
+        if (!cancelled) setStatus(`Loading result… (${attempts}/8)`);
+        window.setTimeout(() => { void loadClaim(); }, 1500);
+      }
+    }
+
+    void loadClaim();
+    return () => { cancelled = true; };
   }, []);
 
   async function pair() {
