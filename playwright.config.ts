@@ -6,7 +6,7 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:5173" },
   webServer: [
     {
-      command: ".venv/bin/uvicorn app.main:app --app-dir services/api --host 127.0.0.1 --port 8000",
+      command: "node scripts/run-python.mjs -m uvicorn app.main:app --app-dir services/api --host 127.0.0.1 --port 8000",
       url: "http://127.0.0.1:8000/healthz",
       reuseExistingServer: false,
     },
