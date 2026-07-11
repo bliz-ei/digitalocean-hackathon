@@ -29,6 +29,11 @@ ingress:
         name: pwa
       match:
         path:
+          prefix: /app
+    - component:
+        name: web
+      match:
+        path:
           prefix: /
 services:
   - name: api
@@ -107,4 +112,17 @@ static_sites:
     envs:
       - key: VITE_API_URL
         value: ${APP_URL}
+        scope: BUILD_TIME
+  - name: web
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    build_command: npm ci && npm run build -w @verity/web
+    output_dir: apps/web/dist
+    catchall_document: index.html
+    envs:
+      - key: VITE_PWA_URL
+        value: ${APP_URL}/app
         scope: BUILD_TIME

@@ -18,7 +18,10 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const publicId = event.notification.data?.publicId;
-  const target = new URL(publicId ? `/claims/${encodeURIComponent(publicId)}` : "/", self.location.origin).href;
+  // Resolve against this worker's own registration scope (e.g. "…/app/") rather than
+  // the origin root, so the same file works whether the PWA is mounted at "/" or a
+  // path prefix.
+  const target = new URL(publicId ? `claims/${encodeURIComponent(publicId)}` : "", self.registration.scope).href;
   event.waitUntil((async () => {
     for (const client of await self.clients.matchAll({ type: "window", includeUncontrolled: true })) {
       if (new URL(client.url).origin === self.location.origin) {
