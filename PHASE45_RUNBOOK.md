@@ -39,7 +39,14 @@ extension against the deployed URL, and runs the strict release preflight. Never
 
 ## Three-run demo rehearsal
 
-For each run, create a fresh session and use a fresh claim:
+Before the manual phone rehearsal, run the automated gate against the deployment
+(three consecutive end-to-end fixture runs plus a live WebSocket heartbeat):
+
+```sh
+VERITY_HEALTH_URL=https://<app-url> npm run demo:rehearsal
+```
+
+For each manual run, create a fresh session and use a fresh claim:
 
 1. Open YouTube and start Verity from the extension.
 2. Pair the iPhone by entering the six-digit code in the Home Screen-installed PWA.

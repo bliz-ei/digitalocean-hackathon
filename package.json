@@ -15,6 +15,8 @@
     "build": "npm run build --workspaces --if-present",
     "build:extension-zip": "npm run build -w @verity/extension && rm -f apps/web/public/verity-extension.zip && cd apps/extension/dist && zip -r ../../web/public/verity-extension.zip . -x '.*'",
     "test:browser": "playwright test",
+    "test:e2e": "node scripts/run-python.mjs -m pytest services/api/tests/test_e2e_golden_paths.py -q",
+    "demo:rehearsal": "node scripts/run-python.mjs scripts/demo_rehearsal.py",
     "phase0:validate": "node scripts/run-python.mjs phase0/harness.py validate",
     "phase0:test-node": "node --test phase0/tests/*.test.mjs",
     "phase0:new-run": "node scripts/run-python.mjs phase0/harness.py new-run",
