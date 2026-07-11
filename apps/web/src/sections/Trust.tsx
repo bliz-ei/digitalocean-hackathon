@@ -16,7 +16,7 @@ const CARDS:Card[]=[
  *  the evidence/interpretation split, and the hard rules. */
 export function Trust(){
   return (
-    <section className="web-section" id="trust">
+    <section className="web-section web-section--white" id="trust">
       <div className="web-wrap">
         <header className="web-head">
           <span className="web-eyebrow">Trust</span>

@@ -2,12 +2,12 @@ import {Button} from "@verity/ui";
 import {CHROME_STORE_URL} from "../config";
 import {HeroReplay} from "./HeroReplay";
 
-/** hero-stripe-band: the red diagonal-stripe gradient appears once, here, across the
- *  top of the page. Copy left, the live overlay replay right; stacks on mobile. */
+/** hero-wash-band: a diffuse red-coral ambient wash appears once, here, behind the
+ *  centered hero copy and the glass product mockup that floats beneath it (aside pattern). */
 export function Hero(){
   return (
     <section className="web-hero" id="top">
-      <div className="web-hero__stripes" aria-hidden="true"/>
+      <div className="web-hero__wash" aria-hidden="true"/>
       <div className="web-hero__inner">
         <div className="web-hero__copy">
           <h1 className="vy-display-xl web-hero__headline">

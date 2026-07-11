@@ -1,36 +1,50 @@
-/* Verity marketing site — page layout. Every color/space/radius/type value resolves
-   to a @verity/ui token. No drop shadows; saturated accents live only inside the
-   verdict badges and overlay mockup. Mobile-first, collapses per DESIGN.md. */
+/* Verity marketing site — Verity Glass (v2, light). Every color/space/radius/type value
+   resolves to a @verity/ui token. Layout follows aside.com: centered hero copy over a
+   diffuse red-coral ambient wash, a glass product mockup floating on the wash, alternating
+   white / canvas sections, pastel-tiled feature cards, one dark pill per fold, airy footer.
+   Shadows live only on glass/floating surfaces; flat in-page cards stay hairline + shadowless. */
 
 .web-root { background: var(--color-canvas); color: var(--color-body); }
 .web-root * , .web-root *::before, .web-root *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: var(--color-canvas); }
 :where(h1,h2,h3,h4,p,ol,ul,li,blockquote) { margin: 0; }
 .web-root ul { list-style: none; padding: 0; }
 
 /* Shared content column + section rhythm (96 → 64 → 48). */
 .web-wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding-inline: var(--space-xl); }
 .web-section { padding-block: var(--space-section); scroll-margin-top: 72px; }
+/* Alternating background is the only sanctioned section divider (DESIGN.md Layout). */
+.web-section--white { background: var(--color-surface); }
 
+/* Centered eyebrow micro-link — the one sanctioned use of accent on text (aside pattern).
+   The "→" is decoration appended in CSS so copy strings stay verbatim. */
 .web-eyebrow {
   display: inline-block;
   font-size: var(--type-caption-sm-size);
   letter-spacing: var(--type-caption-sm-tracking);
   line-height: var(--type-caption-sm-line);
-  text-transform: uppercase;
-  color: var(--color-mute);
+  font-weight: var(--weight-medium);
+  color: var(--color-accent-blue);
   margin-bottom: var(--space-md);
 }
-.web-head { max-width: 760px; margin-bottom: var(--space-xxl); }
+.web-eyebrow::after { content: " \2192"; }
+
+/* Centered section head column (aside intro band). */
+.web-head { max-width: 720px; margin: 0 auto var(--space-xxl); text-align: center; }
 .web-head__title { margin-bottom: var(--space-lg); }
 .web-head__lead { color: var(--color-body); }
 
-/* ============================ Primary nav ============================ */
+/* ============================ Primary nav (glass sticky) ============================ */
 .web-nav {
   position: sticky; top: 0; z-index: 40;
-  background: var(--color-canvas);
+  background: var(--color-glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--color-hairline);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .web-nav { background: var(--color-glass-bg-strong); }
 }
 .web-nav__inner {
   max-width: 1240px; margin: 0 auto;
@@ -65,10 +79,12 @@ html { scroll-behavior: smooth; }
 }
 .web-nav__burger span { height: 1.5px; width: 100%; background: var(--color-on-dark); border-radius: var(--rounded-full); }
 
-/* ============================ Mobile drawer ============================ */
+/* ============================ Mobile drawer (glass-bg-strong) ============================ */
 .web-drawer {
   position: fixed; inset: 0; z-index: 50;
-  background: var(--color-canvas);
+  background: var(--color-glass-bg-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
   display: flex; flex-direction: column;
 }
 .web-drawer[hidden] { display: none; }
@@ -93,43 +109,64 @@ html { scroll-behavior: smooth; }
   border-bottom: 1px solid var(--color-hairline);
 }
 
-/* ============================ Hero ============================ */
-.web-hero { position: relative; overflow: hidden; padding-block: var(--space-section); }
-.web-hero__stripes {
-  position: absolute; inset: 0 0 auto 0; height: 560px; pointer-events: none;
-  background-image:
-    linear-gradient(118deg, transparent 7%, var(--color-hero-stripe-start) 11%, var(--color-hero-stripe-end) 18%, transparent 22%),
-    linear-gradient(118deg, transparent 25%, var(--color-hero-stripe-start) 29%, var(--color-hero-stripe-end) 36%, transparent 40%),
-    linear-gradient(118deg, transparent 43%, var(--color-hero-stripe-start) 47%, var(--color-hero-stripe-end) 54%, transparent 58%);
-  -webkit-mask-image: linear-gradient(158deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 34%, rgba(0,0,0,0) 66%);
-  mask-image: linear-gradient(158deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 34%, rgba(0,0,0,0) 66%);
-  opacity: 0.8;
+/* ============================ Hero (wash band) ============================ */
+.web-hero {
+  position: relative; overflow: hidden;
+  background: var(--color-surface);
+  padding-block: var(--space-section) var(--space-section);
+}
+/* Diffuse red-coral atmospheric wash — the page's single dominant ambient moment. */
+.web-hero__wash {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: var(--wash-hero);
+  background-repeat: no-repeat;
 }
 .web-hero__inner {
   position: relative; z-index: 1;
   max-width: 1240px; margin: 0 auto; padding-inline: var(--space-xl);
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: var(--space-section); align-items: center;
+  display: flex; flex-direction: column; align-items: center;
 }
-.web-hero__copy { display: flex; flex-direction: column; }
+.web-hero__copy {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  max-width: 720px;
+}
 .web-hero__headline { margin-bottom: var(--space-xl); }
-.web-hero__sub { color: var(--color-charcoal); max-width: 46ch; margin-bottom: var(--space-xxl); }
-.web-hero__cta { display: flex; align-items: center; gap: var(--space-xl); flex-wrap: wrap; }
+.web-hero__sub { color: var(--color-charcoal); max-width: 54ch; margin-bottom: var(--space-xxl); }
+.web-hero__cta { display: flex; align-items: center; justify-content: center; gap: var(--space-xl); flex-wrap: wrap; }
+/* aside-style marketing pills: fully rounded CTAs on nav, hero, and closing band */
+.web-nav__cta .vy-btn, .web-hero__cta .vy-btn, .web-cta__actions .vy-btn { border-radius: var(--rounded-full); padding-inline: 20px; }
 .web-hero__secondary {
   color: var(--color-on-dark);
   font-size: var(--type-link-md-size); font-weight: var(--type-link-md-weight);
   letter-spacing: var(--type-link-md-tracking);
 }
 .web-hero__secondary:hover { text-decoration: underline; }
-.web-hero__visual { min-width: 0; }
+.web-hero__visual { position: relative; width: 100%; max-width: 880px; min-width: 0; margin-top: var(--space-section); }
+/* Soft coral bloom directly behind the glass mockup so it visibly frosts the wash. */
+.web-hero__visual::before {
+  content: ""; position: absolute; inset: -8% -6%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 62% 70% at 50% 42%, color-mix(in srgb, var(--color-hero-stripe-start) 24%, transparent), transparent 72%),
+    radial-gradient(ellipse 44% 52% at 78% 30%, color-mix(in srgb, var(--color-hero-stripe-end) 16%, transparent), transparent 74%);
+  filter: blur(26px);
+}
 
-/* ---- Hero overlay mockup (rounded-xl hairline container) ---- */
+/* ---- Hero overlay mockup — glass panel floating on the wash (frosts it) ---- */
 .web-mock {
   display: flex; flex-direction: column; gap: var(--space-md);
   padding: var(--space-lg);
-  background: var(--color-surface);
+  background: var(--color-glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-xl);
+  box-shadow: var(--shadow-float), inset 0 0 0 1px var(--color-glass-border);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .web-mock { background: var(--color-glass-bg-strong); }
+}
+@media (max-width: 480px) {
+  .web-mock { -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%); }
 }
 .web-mock__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
 .web-mock__tag {
@@ -199,13 +236,19 @@ html { scroll-behavior: smooth; }
   border-radius: var(--rounded-lg);
 }
 .web-step__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-sm); }
+/* Pastel illustration tile per card (aside-style), derived from accent hues at low saturation. */
 .web-step__glyph {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px;
+  width: 40px; height: 40px;
   border-radius: var(--rounded-md);
-  background: var(--color-surface-card); border: 1px solid var(--color-hairline);
-  color: var(--color-body);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-charcoal);
 }
+.web-step:nth-child(5n+1) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-blue-soft), var(--color-accent-green-soft)); }
+.web-step:nth-child(5n+2) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-green-soft), var(--color-accent-yellow-soft)); }
+.web-step:nth-child(5n+3) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-yellow-soft), var(--color-accent-red-soft)); }
+.web-step:nth-child(5n+4) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-red-soft), var(--color-accent-blue-soft)); }
+.web-step:nth-child(5n+5) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-blue-soft), var(--color-accent-green-soft)); }
 .web-step__title { color: var(--color-ink); }
 .web-step__body { color: var(--color-body); }
 
@@ -236,11 +279,14 @@ html { scroll-behavior: smooth; }
 }
 .web-trustcard__glyph {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; margin-bottom: var(--space-sm);
+  width: 40px; height: 40px; margin-bottom: var(--space-sm);
   border-radius: var(--rounded-md);
-  background: var(--color-surface-card); border: 1px solid var(--color-hairline);
-  color: var(--color-body);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-charcoal);
 }
+.web-trustcard:nth-child(3n+1) .web-trustcard__glyph { background-image: linear-gradient(135deg, var(--color-accent-blue-soft), var(--color-accent-green-soft)); }
+.web-trustcard:nth-child(3n+2) .web-trustcard__glyph { background-image: linear-gradient(135deg, var(--color-accent-green-soft), var(--color-accent-yellow-soft)); }
+.web-trustcard:nth-child(3n+3) .web-trustcard__glyph { background-image: linear-gradient(135deg, var(--color-accent-red-soft), var(--color-accent-blue-soft)); }
 .web-trustcard__title { color: var(--color-ink); }
 .web-trustcard__body { color: var(--color-body); }
 
@@ -273,12 +319,19 @@ html { scroll-behavior: smooth; }
   border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-lg);
 }
+/* Push notification rendered as a small glass banner floating on the lock screen. */
 .web-push {
   display: flex; flex-direction: column; gap: var(--space-xs);
   padding: var(--space-md);
-  background: var(--color-surface-elevated);
+  background: var(--color-glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-md);
+  box-shadow: var(--shadow-soft), inset 0 0 0 1px var(--color-glass-border);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .web-push { background: var(--color-glass-bg-strong); }
 }
 .web-push__head { display: flex; align-items: center; gap: var(--space-sm); }
 .web-push__icon { display: inline-flex; }
@@ -312,8 +365,15 @@ html { scroll-behavior: smooth; }
 .web-phoneverdict__why { font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line); color: var(--color-body); }
 .web-phoneverdict__meta { font-size: var(--type-caption-md-size); letter-spacing: var(--type-caption-md-tracking); color: var(--color-mute); }
 
-/* ============================ CTA band ============================ */
+/* ============================ CTA band (closing wash echo) ============================ */
+.web-cta {
+  position: relative; overflow: hidden;
+  background-color: var(--color-canvas);
+  background-image: var(--wash-hero-echo);
+  background-repeat: no-repeat;
+}
 .web-cta__inner {
+  position: relative; z-index: 1;
   max-width: 720px; margin: 0 auto;
   display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-lg);
 }
@@ -326,17 +386,8 @@ html { scroll-behavior: smooth; }
 .web-cta__secondary:hover { text-decoration: underline; }
 .web-cta__caption { margin-top: var(--space-sm); }
 
-/* ============================ Footer ============================ */
-.web-footer { position: relative; border-top: 1px solid var(--color-hairline); padding-block: 64px; overflow: hidden; }
-.web-footer__stripe {
-  position: absolute; inset: 0 0 auto 0; height: 160px; pointer-events: none;
-  background-image:
-    linear-gradient(118deg, transparent 20%, var(--color-hero-stripe-start) 24%, var(--color-hero-stripe-end) 31%, transparent 35%),
-    linear-gradient(118deg, transparent 45%, var(--color-hero-stripe-start) 49%, var(--color-hero-stripe-end) 56%, transparent 60%);
-  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 70%);
-  mask-image: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 70%);
-  opacity: 0.12;
-}
+/* ============================ Footer (light, airy) ============================ */
+.web-footer { position: relative; border-top: 1px solid var(--color-hairline); background: var(--color-canvas); padding-block: 64px; }
 .web-footer__inner { position: relative; z-index: 1; }
 .web-footer__cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-xl); }
 .web-footer__col { display: flex; flex-direction: column; gap: var(--space-md); }
@@ -356,7 +407,6 @@ html { scroll-behavior: smooth; }
 
 /* ============================ Responsive ============================ */
 @media (max-width: 1024px) {
-  .web-hero__inner { gap: var(--space-xxl); }
   .web-steps { grid-template-columns: repeat(3, 1fr); }
   .web-verdicts { grid-template-columns: 1fr; gap: var(--space-xl); }
 }
@@ -365,7 +415,8 @@ html { scroll-behavior: smooth; }
   .web-section { padding-block: 64px; scroll-margin-top: 64px; }
   .web-wrap { padding-inline: var(--space-lg); }
   .web-hero { padding-block: 64px; }
-  .web-hero__inner { grid-template-columns: 1fr; gap: var(--space-xxl); padding-inline: var(--space-lg); }
+  .web-hero__inner { padding-inline: var(--space-lg); }
+  .web-hero__visual { margin-top: 64px; }
   .web-nav__inner { grid-template-columns: auto 1fr auto; padding-inline: var(--space-lg); }
   .web-nav__links, .web-nav__demo { display: none; }
   .web-nav__brand { justify-self: center; }
@@ -384,6 +435,7 @@ html { scroll-behavior: smooth; }
   .web-section { padding-block: 48px; }
   .web-hero { padding-block: 48px; }
   .web-hero__headline { font-size: 36px; }
+  .web-hero__visual { margin-top: 48px; }
   .web-head__title { font-size: 32px; }
   .web-steps { grid-template-columns: 1fr; }
   .web-hero__cta, .web-cta__actions { gap: var(--space-lg); }

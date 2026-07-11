@@ -9,9 +9,9 @@ const LINKS=[
   {href:"#iphone",label:"iPhone"}
 ];
 
-/** primary-nav (DESIGN.md): wordmark left, centered anchor cluster, right cluster of
- *  a secondary demo link + the white "Add to Chrome" pill. At ≤768px the center
- *  cluster collapses into a full-screen drawer; the white pill stays visible. */
+/** primary-nav (DESIGN.md): glass sticky bar — wordmark left, centered anchor cluster,
+ *  right cluster of a secondary demo link + the dark "Add to Chrome" pill. At ≤768px the
+ *  center cluster collapses into a glass drawer; the dark pill stays visible. */
 export function Nav(){
   const [open,setOpen]=useState(false);
 

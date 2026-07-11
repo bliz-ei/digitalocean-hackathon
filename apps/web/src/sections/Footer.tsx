@@ -26,12 +26,11 @@ const COLUMNS:Column[]=[
   ]}
 ];
 
-/** footer-section — hairline top rule, a faint red stripe echo (allowed by the
- *  footer spec), link columns, wordmark, and a small legal line. */
+/** footer-section — light canvas, hairline top rule, mute link columns, wordmark, and a
+ *  small legal line. Airy and shadowless (aside pattern); no dark stripe echo. */
 export function Footer(){
   return (
     <footer className="web-footer">
-      <div className="web-footer__stripe" aria-hidden="true"/>
       <div className="web-wrap web-footer__inner">
         <div className="web-footer__cols">
           {COLUMNS.map(col=>(

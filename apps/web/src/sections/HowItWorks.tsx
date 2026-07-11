@@ -21,7 +21,7 @@ const STEPS:Step[]=[
  *  and a numbered keycap accent. Copy grounded in the PRD. */
 export function HowItWorks(){
   return (
-    <section className="web-section" id="how-it-works">
+    <section className="web-section web-section--white" id="how-it-works">
       <div className="web-wrap">
         <header className="web-head">
           <span className="web-eyebrow">How it works</span>

@@ -1,7 +1,7 @@
 import {Button} from "@verity/ui";
 import {CHROME_STORE_URL, DEMO_VERDICT_URL} from "../config";
 
-/** Final CTA band — one white pill, a secondary demo link, hackathon caption. */
+/** Final CTA band — closing wash echo, one dark pill, a secondary demo link, hackathon caption. */
 export function CtaBand(){
   return (
     <section className="web-section web-cta">

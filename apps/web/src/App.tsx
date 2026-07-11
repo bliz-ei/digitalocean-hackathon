@@ -8,7 +8,7 @@ import {CtaBand} from "./sections/CtaBand";
 import {Footer} from "./sections/Footer";
 
 /** Verity marketing site — a single landing page. The whole tree lives inside
- *  `.vy-root` so the design-system reset, Inter/ss03 rendering, and dark canvas
+ *  `.vy-root` so the design-system reset, Inter/ss03 rendering, and light canvas
  *  defaults from @verity/ui apply (mirrors how apps/pwa mounts). */
 export function App(){
   return (
