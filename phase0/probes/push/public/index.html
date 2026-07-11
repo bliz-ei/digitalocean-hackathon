@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#157f5b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Verity Push Probe</title>
+    <style>
+      :root { font: 16px/1.5 system-ui, sans-serif; color: #17211d; background: #f4f7f5; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { width: min(680px, calc(100% - 32px)); margin: 48px auto; }
+      h1 { font-size: clamp(2.2rem, 12vw, 4.5rem); line-height: .95; letter-spacing: -.06em; margin: 0 0 18px; }
+      .eyebrow { color: #157f5b; font-size: .8rem; font-weight: 900; letter-spacing: .14em; }
+      section { margin-top: 28px; padding: 22px; border: 1px solid #dce5e0; border-radius: 18px; background: white; }
+      button { width: 100%; margin-top: 10px; border: 0; border-radius: 10px; padding: 13px; background: #173d2d; color: white; font: inherit; font-weight: 800; }
+      button.danger { background: #9b2c2c; }
+      dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      dt { color: #607069; font-size: .75rem; text-transform: uppercase; }
+      dd { margin: 2px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+      code { overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">VERITY · PHASE 0E</p>
+      <h1>Push boundary probe</h1>
+      <p id="instructions">Install this page to the iPhone Home Screen, launch the installed app, then use the button below. Notification permission is never requested on page load.</p>
+      <section>
+        <h2>Device state</h2>
+        <dl id="state"></dl>
+        <button id="enable">Enable notifications</button>
+        <button id="revoke" class="danger">Revoke subscription</button>
+        <p id="message" role="status"></p>
+      </section>
+      <section id="claim" hidden>
+        <p class="eyebrow">SYNTHETIC CLAIM ROUTE</p>
+        <h2>Notification opened the intended claim</h2>
+        <dl id="timings"></dl>
+        <button id="copy">Copy sanitized timing record</button>
+      </section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

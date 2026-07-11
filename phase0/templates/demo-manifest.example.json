@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "demo_manifest",
+  "status": "blocked_pending_frozen_clip",
+  "video": {
+    "url": null,
+    "title": null,
+    "start_ms": null,
+    "end_ms": null
+  },
+  "speakers": [
+    { "label": "A", "expected_identity": null },
+    { "label": "B", "expected_identity": null }
+  ],
+  "target_claim": {
+    "speaker": null,
+    "exact_text": null,
+    "start_ms": null,
+    "expected_fixture": "../fixtures/hero-demo/verdict.json"
+  },
+  "fixture_review_owner": null,
+  "contains_sensitive_audio": false,
+  "notes": "Copy to phase0/local/demo-manifest.json and freeze before measured runs."
+}

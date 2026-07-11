@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "fixture_status": "placeholder_not_measured",
+  "measured": false,
+  "gate_status": "not_run",
+  "fallback_label": "Demo fallback",
+  "activation": ["explicit_demo_toggle", "bounded_provider_failure"],
+  "citation_revalidation_owner": null,
+  "citation_revalidated_at": null,
+  "checkpoints": [
+    {"checkpoint": "transcript", "file": "transcript.json", "state": "TRANSCRIBING"},
+    {"checkpoint": "classification", "file": "classification.json", "state": "CLAIM_CANDIDATE"},
+    {"checkpoint": "evidence", "file": "evidence.json", "state": "EVIDENCE_READY"},
+    {"checkpoint": "verdict", "file": "verdict.json", "state": "COMPLETE_OR_FAIL_CLOSED"},
+    {"checkpoint": "push", "file": "push.json", "state": "NOTIFICATION_OUTCOME"}
+  ]
+}

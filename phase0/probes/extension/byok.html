@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Verity BYOK compatibility probe</title>
+    <link rel="stylesheet" href="probe.css">
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">VERITY · PHASE 0D</p>
+      <h1>Direct BYOK probe</h1>
+      <p>Requests leave this extension only for the selected checked-in provider origin. Exported results exclude keys, headers, prompts, and response bodies.</p>
+
+      <section>
+        <h2>Candidate</h2>
+        <div class="grid">
+          <label>Provider
+            <select id="provider">
+              <option value="digitalocean">DigitalOcean Serverless Inference</option>
+              <option value="openai">OpenAI (OpenAI-compatible candidate)</option>
+            </select>
+          </label>
+          <label>Model ID
+            <input id="model" autocomplete="off" placeholder="Enter the exact model ID">
+          </label>
+          <label>Structured response mode
+            <select id="mode">
+              <option value="json_schema">JSON Schema (strict)</option>
+              <option value="json_object">JSON object</option>
+              <option value="prompt_json">Prompt-only JSON</option>
+            </select>
+          </label>
+          <label>Timeout (milliseconds)
+            <input id="timeout" type="number" min="1000" max="30000" step="500" value="10000">
+          </label>
+        </div>
+        <label>API key
+          <input id="key" type="password" autocomplete="new-password" placeholder="Stored locally; cleared from this field after save">
+        </label>
+        <div class="actions">
+          <button id="save">Save key locally</button>
+          <button id="suite">Run required suite</button>
+          <button id="delete" class="danger">Delete key</button>
+          <button id="export">Export sanitized record</button>
+        </div>
+        <p id="message" role="status"></p>
+        <p class="note">The suite runs connection once, classification three times, synthesis three times, and a deliberate invalid-key request. Repeat after a clean extension reload for cold behavior.</p>
+      </section>
+
+      <section>
+        <h2>Sanitized compatibility record</h2>
+        <pre id="record">Not run.</pre>
+      </section>
+    </main>
+    <script type="module" src="byok.js"></script>
+  </body>
+</html>

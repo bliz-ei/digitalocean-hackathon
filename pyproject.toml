@@ -1,0 +1,22 @@
+[project]
+name = "verity-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pydantic>=2.9,<3", "psycopg[binary]>=3.2,<4"]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "services/api"}
+
+[tool.setuptools.packages.find]
+where = ["services/api"]
+include = ["app*"]
+
+[project.optional-dependencies]
+test = ["httpx>=0.27,<1", "pytest>=8,<9"]
+[tool.pytest.ini_options]
+pythonpath = ["services/api"]
+testpaths = ["services/api/tests"]

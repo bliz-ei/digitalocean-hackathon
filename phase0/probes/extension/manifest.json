@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Verity Phase 0 Boundary Probe",
+  "version": "0.1.0",
+  "description": "Disposable MV3 probe for Verity tab audio and direct BYOK compatibility.",
+  "minimum_chrome_version": "116",
+  "permissions": ["activeTab", "offscreen", "storage", "tabCapture"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://inference.do-ai.run/*",
+    "https://api.openai.com/*"
+  ],
+  "background": { "service_worker": "service-worker.js", "type": "module" },
+  "action": { "default_title": "Start Verity Phase 0 audio probe" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://inference.do-ai.run https://api.openai.com ws://127.0.0.1:* ws://localhost:*"
+  }
+}
