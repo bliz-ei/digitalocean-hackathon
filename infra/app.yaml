@@ -1,5 +1,35 @@
 name: verity
 region: sfo
+databases:
+  - name: db
+    engine: PG
+    version: "17"
+    production: false
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+ingress:
+  rules:
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /v1
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /healthz
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /readyz
+    - component:
+        name: pwa
+      match:
+        path:
+          prefix: /
 services:
   - name: api
     github:
@@ -16,9 +46,10 @@ services:
       - key: VERITY_REPOSITORY
         value: postgres
       - key: VERITY_DATABASE_URL
+        value: ${db.DATABASE_URL}
         scope: RUN_TIME
-        type: SECRET
       - key: VERITY_ALLOWED_ORIGINS
+        value: ${APP_URL}
         scope: RUN_TIME
       - key: VERITY_PAIRING_SECRET
         scope: RUN_TIME
@@ -29,6 +60,21 @@ services:
         scope: RUN_TIME
         type: SECRET
       - key: VAPID_SUBJECT
+        scope: RUN_TIME
+jobs:
+  - name: migrate
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile.api
+    kind: PRE_DEPLOY
+    run_command: python scripts/migrate.py
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: VERITY_DATABASE_URL
+        value: ${db.DATABASE_URL}
         scope: RUN_TIME
 static_sites:
   - name: pwa
@@ -42,4 +88,5 @@ static_sites:
     catchall_document: index.html
     envs:
       - key: VITE_API_URL
+        value: ${APP_URL}
         scope: BUILD_TIME
