@@ -9,6 +9,7 @@
 - `VAPID_SUBJECT` (a `mailto:` or HTTPS contact)
 - `VERITY_ALLOWED_ORIGINS` (exact PWA origins, comma-separated)
 - `VERITY_STT_API_KEY` (optional Deepgram key; live STT falls back to the recorded fixture when unset. `VERITY_STT_MODEL` overrides the default `nova-3`.)
+- `VERITY_STT=recorded` (demo kill-switch: forces the recorded fixture even when the Deepgram key is set. With a key set and no kill-switch, a failed Deepgram connect degrades to the recorded fixture automatically; `/readyz` then reports `"stt": "recorded"` and claims carry `fixture_mode=true`.)
 
 Build the PWA and extension with `VITE_API_URL=https://<api-host>`.
 

@@ -141,6 +141,28 @@ class DeepgramSttAdapter:
         return DeepgramSttSession(socket, emit)
 
 
+class FallbackSttAdapter:
+    """Prefers the primary provider and degrades to the disclosed recorded fixture.
+
+    The adapter name reflects the last connect outcome so claims created after a
+    fallback carry fixture_mode=True and /readyz reports the degraded provider.
+    """
+
+    def __init__(self, primary: SttAdapter, backup: SttAdapter):
+        self.primary = primary
+        self.backup = backup
+        self.name = primary.name
+
+    async def connect(self, session_id: str, emit: TranscriptSink) -> SttSession:
+        try:
+            session = await self.primary.connect(session_id, emit)
+            self.name = self.primary.name
+        except ValueError:
+            session = await self.backup.connect(session_id, emit)
+            self.name = self.backup.name
+        return session
+
+
 class ProviderEventNormalizer:
     """Keeps provider labels and event shapes behind the STT adapter boundary."""
 
@@ -257,9 +279,12 @@ class OpenAICompatibleFastClassifier:
 
 def configured_stt() -> SttAdapter:
     api_key = os.getenv("VERITY_STT_API_KEY")
-    if api_key:
-        return DeepgramSttAdapter(api_key, os.getenv("VERITY_STT_MODEL", "nova-3"))
-    return RecordedSttAdapter()
+    if not api_key or os.getenv("VERITY_STT") == "recorded":
+        return RecordedSttAdapter()
+    return FallbackSttAdapter(
+        DeepgramSttAdapter(api_key, os.getenv("VERITY_STT_MODEL", "nova-3")),
+        RecordedSttAdapter(),
+    )
 
 
 def configured_fast_classifier() -> FastClassifier:
