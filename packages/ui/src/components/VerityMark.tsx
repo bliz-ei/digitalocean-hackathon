@@ -1,13 +1,13 @@
 import type {CSSProperties} from "react";
 
-/* Verity mark: a bold, tight hollow circle with the verdict check + cited-source
-   underline layered on top, tips crossing the ring (outline-logo restyle). Ring and
-   strokes read ink via currentColor over a white disc, matching the rasterized icons. */
+/* Verity mark: a bold, tight hollow circle holding the verdict check, with the
+   cited-source underline as a separate accent below the ring (outline-logo restyle).
+   Ring and strokes read ink via currentColor over a white disc, matching the icons. */
 function Glyph({size}:{size:number}){
   return <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
-    <circle cx="16" cy="16" r="9.2" fill="#ffffff" stroke="currentColor" strokeWidth="2.8"/>
-    <path d="M10.75 14.25l3 3L22 10.25" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M11 21.75h10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    <circle cx="16" cy="12.75" r="8.5" fill="#ffffff" stroke="currentColor" strokeWidth="2.8"/>
+    <path d="M10.75 12.75l3.5 3.5L22.5 8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M10 26h12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>;
 }
 
