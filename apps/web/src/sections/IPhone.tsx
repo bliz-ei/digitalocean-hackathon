@@ -1,12 +1,14 @@
 import {VerdictBadge, VerityMark} from "@verity/ui";
+import {Reveal} from "../motion";
 
-/** "iPhone" cross-device — a CSS-only phone frame showing the verbatim push copy and
- *  a mini verdict summary, closing on the load-bearing brand line. */
+/** "iPhone" cross-device (aside "Memory" band cadence) — a CSS-only phone frame showing
+ *  the verbatim push copy and a mini verdict summary, closing on the load-bearing brand
+ *  line. Copy reveals from the left, the device from the right. */
 export function IPhone(){
   return (
     <section className="web-section" id="iphone">
       <div className="web-wrap web-iphone">
-        <div className="web-iphone__copy">
+        <Reveal className="web-iphone__copy">
           <span className="web-eyebrow">Across devices</span>
           <h2 className="vy-display-lg web-head__title">Minimize the tab. The verdict still finds you.</h2>
           <p className="vy-body-lg web-head__lead">
@@ -14,9 +16,9 @@ export function IPhone(){
             ready, Verity pushes it to your paired iPhone — the same claim, one tap away.
           </p>
           <p className="vy-heading-lg web-iphone__closer">Verity follows the claim&mdash;not the platform.</p>
-        </div>
+        </Reveal>
 
-        <div className="web-iphone__device" role="img" aria-label="iPhone lock screen showing a Verity notification and verdict summary">
+        <Reveal className="web-iphone__device" delay={120} role="img" aria-label="iPhone lock screen showing a Verity notification and verdict summary">
           <div className="web-iphone__notch"/>
           <div className="web-iphone__screen">
             <div className="web-push">
@@ -39,7 +41,7 @@ export function IPhone(){
               <span className="web-phoneverdict__meta">3 cited sources · EPA · IEA · Reuters</span>
             </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

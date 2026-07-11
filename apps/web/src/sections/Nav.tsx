@@ -1,19 +1,30 @@
 import {useEffect, useState} from "react";
-import {Button, VerityWordmark} from "@verity/ui";
-import {CHROME_STORE_URL, DEMO_VERDICT_URL} from "../config";
+import {VerityWordmark} from "@verity/ui";
+import {PWA_BASE_URL} from "../config";
+import {AddToChrome} from "./AddToChrome";
 
 const LINKS=[
   {href:"#how-it-works",label:"How it works"},
   {href:"#verdicts",label:"Verdicts"},
-  {href:"#trust",label:"Trust"},
-  {href:"#iphone",label:"iPhone"}
+  {href:"#keys",label:"Your keys"},
+  {href:"#trust",label:"Trust"}
 ];
 
-/** primary-nav (DESIGN.md): glass sticky bar — wordmark left, centered anchor cluster,
- *  right cluster of a secondary demo link + the dark "Add to Chrome" pill. At ≤768px the
- *  center cluster collapses into a glass drawer; the dark pill stays visible. */
-export function Nav(){
+/** primary-nav (aside pattern): transparent over the hero sky, then transitions to a
+ *  frosted glass bar with a hairline once the page scrolls past the fold. Wordmark left,
+ *  centered anchor cluster, right cluster of a ghost web-app link + the dark "Add to
+ *  Chrome" pill. At ≤768px the center cluster collapses into a glass drawer. */
+export function Nav({onInstall}:{onInstall:()=>void}){
   const [open,setOpen]=useState(false);
+  const [scrolled,setScrolled]=useState(false);
+
+  // Nav gains its glass background once the visitor scrolls off the hero top.
+  useEffect(()=>{
+    const onScroll=()=>setScrolled(window.scrollY>24);
+    onScroll();
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return ()=>window.removeEventListener("scroll",onScroll);
+  },[]);
 
   // Lock body scroll and close on Escape while the drawer is open.
   useEffect(()=>{
@@ -26,7 +37,7 @@ export function Nav(){
   },[open]);
 
   return (
-    <header className="web-nav">
+    <header className={`web-nav${scrolled?" is-scrolled":""}`}>
       <div className="web-nav__inner">
         <button type="button" className="web-nav__burger" aria-label="Open menu" aria-expanded={open} onClick={()=>setOpen(true)}>
           <span/><span/><span/>
@@ -41,8 +52,8 @@ export function Nav(){
         </nav>
 
         <div className="web-nav__cta">
-          <a href={DEMO_VERDICT_URL} className="web-nav__demo">Open demo verdict</a>
-          <a href={CHROME_STORE_URL}><Button variant="primary" tabIndex={-1}>Add to Chrome</Button></a>
+          <a href={PWA_BASE_URL} className="web-nav__demo">Use the web app</a>
+          <AddToChrome onOpenModal={onInstall} tabIndex={-1}/>
         </div>
       </div>
 
@@ -53,7 +64,7 @@ export function Nav(){
         </div>
         <nav className="web-drawer__links" aria-label="Primary">
           {LINKS.map(link=><a key={link.href} href={link.href} className="web-drawer__link" onClick={()=>setOpen(false)}>{link.label}</a>)}
-          <a href={DEMO_VERDICT_URL} className="web-drawer__link" onClick={()=>setOpen(false)}>Open demo verdict</a>
+          <a href={PWA_BASE_URL} className="web-drawer__link" onClick={()=>setOpen(false)}>Use the web app</a>
         </nav>
       </div>
     </header>

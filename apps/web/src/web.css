@@ -1,8 +1,10 @@
-/* Verity marketing site — Verity Glass (v2, light). Every color/space/radius/type value
-   resolves to a @verity/ui token. Layout follows aside.com: centered hero copy over a
-   diffuse red-coral ambient wash, a glass product mockup floating on the wash, alternating
-   white / canvas sections, pastel-tiled feature cards, one dark pill per fold, airy footer.
-   Shadows live only on glass/floating surfaces; flat in-page cards stay hairline + shadowless. */
+/* Verity marketing site — Verity Glass (v2, light), restructured to mirror aside.com:
+   a full-bleed sky hero with slow-drifting cloud shapes and a browser-window product
+   mockup, scroll-reveal on every section, a nav that frosts on scroll, pastel-gradient
+   capability cards, a benchmark-cadence verdict band, a password-manager-style BYOK band,
+   privacy cards, a closing sky echo, and an airy footer. Every color/space/radius/type
+   value resolves to a @verity/ui token. Content is Verity's; only structure + motion
+   mirror aside. Shadows live only on glass/floating surfaces. */
 
 .web-root { background: var(--color-canvas); color: var(--color-body); }
 .web-root * , .web-root *::before, .web-root *::after { box-sizing: border-box; }
@@ -11,14 +13,12 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 :where(h1,h2,h3,h4,p,ol,ul,li,blockquote) { margin: 0; }
 .web-root ul { list-style: none; padding: 0; }
 
-/* Shared content column + section rhythm (96 → 64 → 48). */
+/* Shared content column + section rhythm. */
 .web-wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding-inline: var(--space-xl); }
 .web-section { padding-block: var(--space-section); scroll-margin-top: 72px; }
-/* Alternating background is the only sanctioned section divider (DESIGN.md Layout). */
 .web-section--white { background: var(--color-surface); }
 
-/* Centered eyebrow micro-link — the one sanctioned use of accent on text (aside pattern).
-   The "→" is decoration appended in CSS so copy strings stay verbatim. */
+/* Centered eyebrow micro-link — the one sanctioned use of accent on text (aside pattern). */
 .web-eyebrow {
   display: inline-block;
   font-size: var(--type-caption-sm-size);
@@ -30,25 +30,45 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 }
 .web-eyebrow::after { content: " \2192"; }
 
-/* Centered section head column (aside intro band). */
-.web-head { max-width: 720px; margin: 0 auto var(--space-xxl); text-align: center; }
+/* Centered section head column. */
+.web-head { max-width: 760px; margin: 0 auto var(--space-xxl); text-align: center; }
 .web-head__title { margin-bottom: var(--space-lg); }
 .web-head__lead { color: var(--color-body); }
 
-/* ============================ Primary nav (glass sticky) ============================ */
+/* ============================ Scroll-reveal ============================ */
+/* Elements start faded + shifted down; `.is-in` (added by the IntersectionObserver in
+   motion.tsx) settles them into place. One-shot. Reduced-motion neutralizes the offset
+   and transition via the design-system base layer, and Reveal renders `.is-in` up front. */
+.web-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 640ms cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 640ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: opacity, transform;
+}
+.web-reveal.is-in { opacity: 1; transform: none; }
+
+/* ============================ Primary nav (transparent → glass on scroll) ============================ */
 .web-nav {
   position: sticky; top: 0; z-index: 40;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 280ms ease, border-color 280ms ease, box-shadow 280ms ease,
+              backdrop-filter 280ms ease;
+}
+.web-nav.is-scrolled {
   background: var(--color-glass-bg);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid var(--color-hairline);
+  border-bottom-color: var(--color-hairline);
+  box-shadow: var(--shadow-soft);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .web-nav { background: var(--color-glass-bg-strong); }
+  .web-nav.is-scrolled { background: var(--color-glass-bg-strong); }
 }
 .web-nav__inner {
   max-width: 1240px; margin: 0 auto;
-  min-height: 56px;
+  min-height: 60px;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   gap: var(--space-lg);
   padding-inline: var(--space-xl);
@@ -60,6 +80,7 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   font-size: var(--type-body-sm-strong-size);
   font-weight: var(--type-body-sm-strong-weight);
   letter-spacing: var(--type-body-sm-strong-tracking);
+  transition: color 160ms ease;
 }
 .web-nav__link:hover { color: var(--color-on-dark); }
 .web-nav__cta { justify-self: end; display: inline-flex; align-items: center; gap: var(--space-lg); }
@@ -69,6 +90,7 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   font-weight: var(--type-body-sm-strong-weight);
   letter-spacing: var(--type-body-sm-strong-tracking);
   white-space: nowrap;
+  transition: color 160ms ease;
 }
 .web-nav__demo:hover { color: var(--color-on-dark); }
 .web-nav__burger {
@@ -79,7 +101,15 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 }
 .web-nav__burger span { height: 1.5px; width: 100%; background: var(--color-on-dark); border-radius: var(--rounded-full); }
 
-/* ============================ Mobile drawer (glass-bg-strong) ============================ */
+/* "Add to Chrome" pill with inline download glyph. */
+.web-atc { display: inline-flex; }
+.web-atc__icon { margin-right: 6px; margin-left: -2px; }
+.web-nav__cta .vy-btn, .web-hero__cta .vy-btn, .web-cta__actions .vy-btn, .web-atc .vy-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--rounded-full); padding-inline: 20px;
+}
+
+/* ============================ Mobile drawer ============================ */
 .web-drawer {
   position: fixed; inset: 0; z-index: 50;
   background: var(--color-glass-bg-strong);
@@ -90,7 +120,7 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 .web-drawer[hidden] { display: none; }
 .web-drawer__bar {
   display: flex; align-items: center; justify-content: space-between;
-  min-height: 56px; padding-inline: var(--space-xl);
+  min-height: 60px; padding-inline: var(--space-xl);
   border-bottom: 1px solid var(--color-hairline);
 }
 .web-drawer__close {
@@ -109,18 +139,53 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   border-bottom: 1px solid var(--color-hairline);
 }
 
-/* ============================ Hero (wash band) ============================ */
+/* ============================ Hero (full-bleed sky) ============================ */
 .web-hero {
   position: relative; overflow: hidden;
-  background: var(--color-surface);
-  padding-block: var(--space-section) var(--space-section);
+  /* Sky base: pale blue up top fading to the page canvas so the fold blends into white. */
+  background:
+    linear-gradient(180deg,
+      #dcefff 0%,
+      #eaf4fe 34%,
+      color-mix(in srgb, #eaf4fe 40%, var(--color-canvas)) 66%,
+      var(--color-canvas) 100%);
+  padding-block: 132px var(--space-section);
+  margin-top: -60px; /* slide the sky beneath the transparent nav */
+  padding-top: calc(132px + 60px);
 }
-/* Diffuse red-coral atmospheric wash — the page's single dominant ambient moment. */
-.web-hero__wash {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image: var(--wash-hero);
-  background-repeat: no-repeat;
+/* The nav sits over the sky; pull the copy back down so it clears the bar. */
+.web-sky {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  z-index: 0;
 }
+/* Slow-drifting blurred cloud shapes — soft white ellipses that ambient-loop. */
+.web-sky__cloud {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%);
+  filter: blur(6px);
+  opacity: 0.85;
+}
+.web-sky__cloud--1 { width: 46vw; height: 22vw; left: -6vw; top: 6%; animation: web-drift-a 46s ease-in-out infinite; }
+.web-sky__cloud--2 { width: 38vw; height: 18vw; right: -4vw; top: 2%; animation: web-drift-b 58s ease-in-out infinite; }
+.web-sky__cloud--3 { width: 52vw; height: 20vw; left: 24vw; top: 20%; opacity: 0.6; animation: web-drift-a 72s ease-in-out infinite reverse; }
+/* Faint Verity-coral horizon glow for brand continuity. */
+.web-sky__glow {
+  position: absolute; left: 50%; top: -6%; width: 90%; height: 44%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(ellipse 60% 70% at 50% 0%, color-mix(in srgb, var(--color-hero-stripe-start) 16%, transparent), transparent 68%),
+    radial-gradient(ellipse 44% 52% at 80% 8%, color-mix(in srgb, var(--color-hero-stripe-end) 10%, transparent), transparent 72%);
+  filter: blur(8px);
+}
+@keyframes web-drift-a {
+  0%,100% { transform: translate3d(0,0,0); }
+  50% { transform: translate3d(4vw,-1.4vw,0); }
+}
+@keyframes web-drift-b {
+  0%,100% { transform: translate3d(0,0,0); }
+  50% { transform: translate3d(-3.4vw,1.2vw,0); }
+}
+
 .web-hero__inner {
   position: relative; z-index: 1;
   max-width: 1240px; margin: 0 auto; padding-inline: var(--space-xl);
@@ -128,30 +193,86 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 }
 .web-hero__copy {
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  max-width: 720px;
+  max-width: 760px;
 }
+/* Pill badge chip above the headline (aside pattern). */
+.web-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; margin-bottom: var(--space-xl);
+  border-radius: var(--rounded-full);
+  background: var(--color-glass-bg-strong);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-soft);
+  color: var(--color-charcoal);
+  font-size: var(--type-caption-md-size); font-weight: var(--weight-medium);
+  letter-spacing: var(--type-caption-md-tracking);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.web-badge:hover { transform: translateY(-1px); box-shadow: var(--shadow-float); }
+.web-badge__chev { color: var(--color-accent-blue); }
 .web-hero__headline { margin-bottom: var(--space-xl); }
-.web-hero__sub { color: var(--color-charcoal); max-width: 54ch; margin-bottom: var(--space-xxl); }
+.web-hero__sub { color: var(--color-charcoal); max-width: 56ch; margin-bottom: var(--space-xxl); }
 .web-hero__cta { display: flex; align-items: center; justify-content: center; gap: var(--space-xl); flex-wrap: wrap; }
-/* aside-style marketing pills: fully rounded CTAs on nav, hero, and closing band */
-.web-nav__cta .vy-btn, .web-hero__cta .vy-btn, .web-cta__actions .vy-btn { border-radius: var(--rounded-full); padding-inline: 20px; }
 .web-hero__secondary {
   color: var(--color-on-dark);
   font-size: var(--type-link-md-size); font-weight: var(--type-link-md-weight);
   letter-spacing: var(--type-link-md-tracking);
 }
 .web-hero__secondary:hover { text-decoration: underline; }
-.web-hero__visual { position: relative; width: 100%; max-width: 880px; min-width: 0; margin-top: var(--space-section); }
-/* Soft coral bloom directly behind the glass mockup so it visibly frosts the wash. */
+.web-hero__visual { position: relative; width: 100%; max-width: 940px; min-width: 0; margin-top: var(--space-section); }
+
+/* ---- Browser-window product mockup (aside dominant hero visual) ---- */
+.web-browser {
+  position: relative;
+  border-radius: var(--rounded-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+/* Soft coral bloom behind the window so it lifts off the sky. */
 .web-hero__visual::before {
-  content: ""; position: absolute; inset: -8% -6%; z-index: -1; pointer-events: none;
+  content: ""; position: absolute; inset: -6% -4% -10%; z-index: -1; pointer-events: none;
   background:
-    radial-gradient(ellipse 62% 70% at 50% 42%, color-mix(in srgb, var(--color-hero-stripe-start) 24%, transparent), transparent 72%),
-    radial-gradient(ellipse 44% 52% at 78% 30%, color-mix(in srgb, var(--color-hero-stripe-end) 16%, transparent), transparent 74%);
-  filter: blur(26px);
+    radial-gradient(ellipse 60% 64% at 50% 40%, color-mix(in srgb, var(--color-hero-stripe-start) 18%, transparent), transparent 72%),
+    radial-gradient(ellipse 40% 48% at 78% 24%, rgba(87,193,255,0.18), transparent 74%);
+  filter: blur(30px);
+}
+.web-browser__bar {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: 10px var(--space-lg);
+  background: var(--color-surface-elevated);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.web-browser__lights { display: inline-flex; gap: 7px; flex: none; }
+.web-browser__light { width: 11px; height: 11px; border-radius: var(--rounded-full); }
+.web-browser__light--r { background: #ff5f57; }
+.web-browser__light--y { background: #febc2e; }
+.web-browser__light--g { background: #28c840; }
+.web-browser__url {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0 auto;
+  padding: 5px 14px; min-width: min(320px, 52%);
+  justify-content: center;
+  border-radius: var(--rounded-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-mute);
+  font-size: var(--type-caption-md-size); letter-spacing: var(--type-caption-md-tracking);
+}
+.web-browser__lock { color: var(--color-ash); }
+.web-browser__viewport {
+  position: relative;
+  padding: var(--space-xl);
+  /* Faint page tint so the Verity overlay reads as a glass panel floating on a video page. */
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 0%, rgba(87,193,255,0.06), transparent 70%),
+    var(--color-canvas);
 }
 
-/* ---- Hero overlay mockup — glass panel floating on the wash (frosts it) ---- */
+/* ---- Hero overlay mockup — glass panel inside the browser viewport ---- */
 .web-mock {
   display: flex; flex-direction: column; gap: var(--space-md);
   padding: var(--space-lg);
@@ -224,35 +345,65 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   font-size: var(--type-caption-sm-size); letter-spacing: var(--type-caption-sm-tracking);
 }
 
-/* ============================ How it works ============================ */
-.web-steps {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-lg);
+/* ============================ Intro (two-column editorial) ============================ */
+.web-intro {
+  display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--space-section);
+  align-items: start;
 }
-.web-step {
+.web-intro__eyebrow { padding-top: 6px; }
+.web-intro__body { display: flex; flex-direction: column; gap: var(--space-xl); max-width: 720px; }
+.web-intro__lead { color: var(--color-ink); }
+.web-intro__para { color: var(--color-body); }
+
+/* ============================ Pastel gradient capability / BYOK cards ============================ */
+.web-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl); }
+.web-card {
   display: flex; flex-direction: column; gap: var(--space-sm);
   padding: var(--space-xl);
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--rounded-lg);
+  border-radius: var(--rounded-xl);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
-.web-step__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-sm); }
-/* Pastel illustration tile per card (aside-style), derived from accent hues at low saturation. */
-.web-step__glyph {
+.web-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-float); border-color: var(--color-hairline-strong); }
+/* The large pastel mesh tile at the top of each card — soft, low-saturation gradients. */
+.web-card__art {
+  display: flex; align-items: center; justify-content: center;
+  height: 132px; margin-bottom: var(--space-md);
+  border-radius: var(--rounded-lg);
+  border: 1px solid var(--color-hairline-soft);
+}
+.web-card--blue .web-card__art {
+  background:
+    radial-gradient(ellipse 70% 80% at 20% 20%, rgba(87,193,255,0.55), transparent 62%),
+    radial-gradient(ellipse 80% 70% at 85% 80%, rgba(89,212,153,0.45), transparent 60%),
+    linear-gradient(135deg, #eaf6ff, #f2fbff);
+}
+.web-card--green .web-card__art {
+  background:
+    radial-gradient(ellipse 70% 80% at 25% 25%, rgba(89,212,153,0.5), transparent 62%),
+    radial-gradient(ellipse 80% 70% at 85% 80%, rgba(255,197,51,0.4), transparent 60%),
+    linear-gradient(135deg, #ecfbf3, #f4fff9);
+}
+.web-card--coral .web-card__art {
+  background:
+    radial-gradient(ellipse 70% 80% at 22% 20%, rgba(255,150,150,0.5), transparent 62%),
+    radial-gradient(ellipse 80% 70% at 85% 82%, rgba(255,178,120,0.42), transparent 60%),
+    linear-gradient(135deg, #fff0ee, #fff6f2);
+}
+.web-card__glyph {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 40px; height: 40px;
+  width: 44px; height: 44px;
   border-radius: var(--rounded-md);
+  background: var(--color-glass-bg-strong);
   border: 1px solid var(--color-hairline);
   color: var(--color-charcoal);
+  box-shadow: var(--shadow-soft);
 }
-.web-step:nth-child(5n+1) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-blue-soft), var(--color-accent-green-soft)); }
-.web-step:nth-child(5n+2) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-green-soft), var(--color-accent-yellow-soft)); }
-.web-step:nth-child(5n+3) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-yellow-soft), var(--color-accent-red-soft)); }
-.web-step:nth-child(5n+4) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-red-soft), var(--color-accent-blue-soft)); }
-.web-step:nth-child(5n+5) .web-step__glyph { background-image: linear-gradient(135deg, var(--color-accent-blue-soft), var(--color-accent-green-soft)); }
-.web-step__title { color: var(--color-ink); }
-.web-step__body { color: var(--color-body); }
+.web-card__title { color: var(--color-ink); }
+.web-card__body { color: var(--color-body); }
 
-/* ============================ Verdicts ============================ */
+/* ============================ Verdicts (benchmark cadence) ============================ */
 .web-verdicts {
   display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: var(--space-xxl);
   align-items: start;
@@ -268,7 +419,7 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 .web-verdicts__def { color: var(--color-body); }
 .web-verdicts__card { min-width: 0; }
 
-/* ============================ Trust ============================ */
+/* ============================ Trust (privacy cards) ============================ */
 .web-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
 .web-trustcard {
   display: flex; flex-direction: column; gap: var(--space-sm);
@@ -276,7 +427,9 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-lg);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
+.web-trustcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-float); border-color: var(--color-hairline-strong); }
 .web-trustcard__glyph {
   display: inline-flex; align-items: center; justify-content: center;
   width: 40px; height: 40px; margin-bottom: var(--space-sm);
@@ -289,6 +442,63 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 .web-trustcard:nth-child(3n+3) .web-trustcard__glyph { background-image: linear-gradient(135deg, var(--color-accent-red-soft), var(--color-accent-blue-soft)); }
 .web-trustcard__title { color: var(--color-ink); }
 .web-trustcard__body { color: var(--color-body); }
+
+/* ============================ BYOK two-column feature (aside password-manager panel) ============================ */
+.web-byok {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-section);
+  align-items: center;
+  margin-top: var(--space-section);
+}
+.web-byok__title { color: var(--color-ink); margin-bottom: var(--space-md); }
+.web-byok__lead { color: var(--color-body); margin-bottom: var(--space-lg); }
+.web-byok__points { display: flex; flex-direction: column; gap: var(--space-md); }
+.web-byok__point {
+  display: flex; align-items: flex-start; gap: var(--space-md);
+  font-size: var(--type-body-md-size); line-height: var(--type-body-md-line); color: var(--color-charcoal);
+}
+.web-byok__dot { width: 6px; height: 6px; margin-top: 9px; flex: none; border-radius: var(--rounded-full); background: var(--color-accent-green); }
+/* CSS mock of the extension key form. */
+.web-byok__panel {
+  padding: var(--space-xl);
+  border-radius: var(--rounded-xl);
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(87,193,255,0.14), transparent 70%),
+    var(--color-surface-elevated);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-soft);
+}
+.web-keyform {
+  display: flex; flex-direction: column; gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-lg);
+}
+.web-keyform__label { font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); color: var(--color-ink); }
+.web-keyform__input {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+  padding: 10px var(--space-md);
+  border-radius: var(--rounded-md);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-hairline);
+}
+.web-keyform__input { min-width: 0; }
+.web-keyform__value { min-width: 0; font-family: var(--font-mono); font-size: var(--type-body-sm-size); color: var(--color-charcoal); letter-spacing: 1px; overflow-wrap: anywhere; }
+.web-keyform__pill {
+  padding: 2px 10px; border-radius: var(--rounded-full);
+  background: var(--color-accent-green-soft); color: var(--color-accent-green);
+  font-size: var(--type-caption-sm-size); font-weight: var(--weight-medium); letter-spacing: var(--type-caption-sm-tracking);
+}
+.web-keyform__help { font-size: var(--type-caption-md-size); line-height: var(--type-caption-md-line); color: var(--color-mute); }
+.web-keyform__row { display: flex; gap: var(--space-sm); margin-top: var(--space-xs); }
+.web-keyform__btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 16px; border-radius: var(--rounded-full);
+  font-size: var(--type-button-md-size); font-weight: var(--weight-medium); letter-spacing: var(--type-button-md-tracking);
+}
+.web-keyform__btn--ghost { border: 1px solid var(--color-hairline-strong); color: var(--color-charcoal); }
+.web-keyform__btn--primary { background: var(--color-primary); color: var(--color-on-primary); }
+.web-keyform__status { font-size: var(--type-caption-md-size); color: var(--color-accent-green); margin-top: var(--space-xs); }
 
 /* ============================ iPhone ============================ */
 .web-iphone {
@@ -303,6 +513,7 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   background: var(--color-surface);
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--rounded-xl);
+  box-shadow: var(--shadow-float);
   position: relative;
 }
 .web-iphone__notch {
@@ -319,7 +530,6 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   border: 1px solid var(--color-hairline);
   border-radius: var(--rounded-lg);
 }
-/* Push notification rendered as a small glass banner floating on the lock screen. */
 .web-push {
   display: flex; flex-direction: column; gap: var(--space-xs);
   padding: var(--space-md);
@@ -365,13 +575,19 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 .web-phoneverdict__why { font-size: var(--type-body-sm-size); line-height: var(--type-body-sm-line); color: var(--color-body); }
 .web-phoneverdict__meta { font-size: var(--type-caption-md-size); letter-spacing: var(--type-caption-md-tracking); color: var(--color-mute); }
 
-/* ============================ CTA band (closing wash echo) ============================ */
+/* ============================ CTA band (closing sky echo) ============================ */
 .web-cta {
   position: relative; overflow: hidden;
-  background-color: var(--color-canvas);
-  background-image: var(--wash-hero-echo);
-  background-repeat: no-repeat;
+  background:
+    linear-gradient(0deg,
+      #dcefff 0%,
+      #eaf4fe 30%,
+      color-mix(in srgb, #eaf4fe 40%, var(--color-canvas)) 64%,
+      var(--color-canvas) 100%);
 }
+.web-cta .web-sky__cloud--1 { top: auto; bottom: 8%; }
+.web-cta .web-sky__cloud--2 { top: auto; bottom: 2%; }
+.web-cta .web-sky__glow { top: auto; bottom: -6%; }
 .web-cta__inner {
   position: relative; z-index: 1;
   max-width: 720px; margin: 0 auto;
@@ -386,7 +602,68 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 .web-cta__secondary:hover { text-decoration: underline; }
 .web-cta__caption { margin-top: var(--space-sm); }
 
-/* ============================ Footer (light, airy) ============================ */
+/* ============================ Install modal ============================ */
+.web-modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-xl);
+  background: rgba(9, 10, 12, 0.32);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: web-scrim-in 200ms ease;
+}
+@keyframes web-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+.web-modal__card {
+  width: 100%; max-width: 520px; max-height: calc(100dvh - 2 * var(--space-xl));
+  overflow-y: auto;
+  padding: var(--space-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-xl);
+  box-shadow: var(--shadow-float);
+  animation: web-card-in 240ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes web-card-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
+.web-modal__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-lg); margin-bottom: var(--space-md); }
+.web-modal__eyebrow {
+  display: block; margin-bottom: var(--space-xs);
+  font-size: var(--type-caption-sm-size); letter-spacing: var(--type-caption-sm-tracking);
+  text-transform: uppercase; color: var(--color-accent-blue); font-weight: var(--weight-medium);
+}
+.web-modal__title { color: var(--color-ink); }
+.web-modal__close {
+  flex: none; width: 32px; height: 32px; margin: -4px -4px 0 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--color-hairline); border-radius: var(--rounded-full);
+  color: var(--color-mute); font-size: 20px; line-height: 1; cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.web-modal__close:hover { background: var(--color-surface-elevated); color: var(--color-ink); }
+.web-modal__lead { color: var(--color-body); margin-bottom: var(--space-lg); }
+.web-modal__steps { display: flex; flex-direction: column; gap: var(--space-md); }
+.web-modal__step { display: flex; align-items: flex-start; gap: var(--space-md); }
+.web-modal__num {
+  flex: none; width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--rounded-full);
+  background: var(--color-primary); color: var(--color-on-primary);
+  font-size: var(--type-caption-sm-size); font-weight: var(--weight-semibold);
+}
+.web-modal__steptitle { color: var(--color-ink); margin-bottom: 2px; }
+.web-modal__stepbody { color: var(--color-body); }
+.web-modal__foot {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-lg);
+  margin-top: var(--space-xl); padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-hairline);
+}
+.web-modal__redownload {
+  color: var(--color-body); font-size: var(--type-body-sm-strong-size);
+  font-weight: var(--type-body-sm-strong-weight); letter-spacing: var(--type-body-sm-strong-tracking);
+}
+.web-modal__redownload:hover { color: var(--color-ink); text-decoration: underline; }
+.web-modal__foot .vy-btn { border-radius: var(--rounded-full); padding-inline: 20px; }
+
+/* ============================ Footer ============================ */
 .web-footer { position: relative; border-top: 1px solid var(--color-hairline); background: var(--color-canvas); padding-block: 64px; }
 .web-footer__inner { position: relative; z-index: 1; }
 .web-footer__cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-xl); }
@@ -407,21 +684,22 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 
 /* ============================ Responsive ============================ */
 @media (max-width: 1024px) {
-  .web-steps { grid-template-columns: repeat(3, 1fr); }
-  .web-verdicts { grid-template-columns: 1fr; gap: var(--space-xl); }
+  .web-cards { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin-inline: auto; }
+  .web-verdicts { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
+  .web-byok { grid-template-columns: minmax(0, 1fr); gap: var(--space-xxl); }
+  .web-intro { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
 }
 
 @media (max-width: 768px) {
   .web-section { padding-block: 64px; scroll-margin-top: 64px; }
   .web-wrap { padding-inline: var(--space-lg); }
-  .web-hero { padding-block: 64px; }
+  .web-hero { padding-block: calc(104px + 60px) 64px; }
   .web-hero__inner { padding-inline: var(--space-lg); }
   .web-hero__visual { margin-top: 64px; }
   .web-nav__inner { grid-template-columns: auto 1fr auto; padding-inline: var(--space-lg); }
   .web-nav__links, .web-nav__demo { display: none; }
   .web-nav__brand { justify-self: center; }
   .web-nav__burger { display: inline-flex; }
-  .web-steps { grid-template-columns: repeat(2, 1fr); }
   .web-trust { grid-template-columns: 1fr; }
   .web-iphone { grid-template-columns: 1fr; gap: var(--space-xxl); }
   .web-iphone__copy { max-width: none; }
@@ -433,13 +711,15 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
 
 @media (max-width: 480px) {
   .web-section { padding-block: 48px; }
-  .web-hero { padding-block: 48px; }
+  .web-hero { padding-block: calc(88px + 60px) 48px; }
   .web-hero__headline { font-size: 36px; }
   .web-hero__visual { margin-top: 48px; }
   .web-head__title { font-size: 32px; }
-  .web-steps { grid-template-columns: 1fr; }
+  .web-browser__viewport { padding: var(--space-md); }
   .web-hero__cta, .web-cta__actions { gap: var(--space-lg); }
   .web-iphone__device { width: 100%; max-width: 300px; justify-self: center; }
+  .web-modal__foot { flex-direction: column-reverse; align-items: stretch; }
+  .web-modal__foot .vy-btn { width: 100%; }
 }
 
 @media (max-width: 360px) {
@@ -447,4 +727,12 @@ html { scroll-behavior: smooth; background: var(--color-canvas); }
   .web-hero__inner { padding-inline: var(--space-md); }
   .web-nav__inner { padding-inline: var(--space-md); gap: var(--space-sm); }
   .web-footer__cols { grid-template-columns: 1fr; }
+}
+
+/* ============================ Reduced motion ============================ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .web-reveal { opacity: 1; transform: none; transition: none; }
+  .web-sky__cloud { animation: none !important; }
+  .web-modal, .web-modal__card { animation: none !important; }
 }

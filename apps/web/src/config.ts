@@ -7,6 +7,10 @@ export const PWA_BASE_URL = import.meta.env.VITE_PWA_URL ?? "http://localhost:51
 /** Deep link to the disclosed demo verdict on the paired PWA. */
 export const DEMO_VERDICT_URL = `${PWA_BASE_URL}/claims/demo`;
 
+/** The packaged extension, served from apps/web/public. "Add to Chrome" downloads
+ *  this and opens the load-unpacked install modal. */
+export const EXTENSION_ZIP_URL = "/verity-extension.zip";
+
 /** Chrome Web Store listing. Placeholder until the extension is published. */
 export const CHROME_STORE_URL = "#";
 

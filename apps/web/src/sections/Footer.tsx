@@ -1,5 +1,5 @@
 import {VerityWordmark} from "@verity/ui";
-import {CHROME_STORE_URL, DEMO_VERDICT_URL, GITHUB_URL} from "../config";
+import {DEMO_VERDICT_URL, GITHUB_URL, PWA_BASE_URL} from "../config";
 
 type Column={title:string;links:{label:string;href:string}[]};
 
@@ -7,10 +7,11 @@ const COLUMNS:Column[]=[
   {title:"Product",links:[
     {label:"How it works",href:"#how-it-works"},
     {label:"Verdicts",href:"#verdicts"},
-    {label:"Trust",href:"#trust"},
-    {label:"Add to Chrome",href:CHROME_STORE_URL}
+    {label:"Your keys",href:"#keys"},
+    {label:"Trust",href:"#trust"}
   ]},
   {title:"Demo",links:[
+    {label:"Use the web app",href:PWA_BASE_URL},
     {label:"Open demo verdict",href:DEMO_VERDICT_URL},
     {label:"iPhone hand-off",href:"#iphone"}
   ]},

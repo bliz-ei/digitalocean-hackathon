@@ -13,6 +13,7 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
+    "build:extension-zip": "npm run build -w @verity/extension && rm -f apps/web/public/verity-extension.zip && cd apps/extension/dist && zip -r ../../web/public/verity-extension.zip . -x '.*'",
     "test:browser": "playwright test",
     "phase0:validate": "node scripts/run-python.mjs phase0/harness.py validate",
     "phase0:test-node": "node --test phase0/tests/*.test.mjs",
