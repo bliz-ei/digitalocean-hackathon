@@ -10,6 +10,7 @@ from app.pipeline.hero import run_hero
 from app.pipeline.evidence import EvidencePipeline
 from app.providers.evidence import RecordedEvidenceProvider
 from app.providers.fakes import FakeProviders
+from app.cross_device import CrossDeviceCoordinator, FakePushAdapter, PairingRedeem, PostgresCrossDeviceStore, SubscriptionCreate
 
 
 @pytest.mark.skipif(not os.getenv("TEST_DATABASE_URL"), reason="PostgreSQL not configured")
@@ -40,6 +41,19 @@ def test_postgres_persists_canonical_hero_claim():
         assert completed.state == ClaimState.COMPLETE
         assert repository.db.execute("SELECT count(*) FROM evidence WHERE claim_id=(SELECT id FROM claims WHERE public_id=%s)", (live_claim.public_id,)).fetchone()[0] == 3
         assert repository.db.execute("SELECT count(*) FROM notification_jobs WHERE public_id=%s", (live_claim.public_id,)).fetchone()[0] == 1
+        push = FakePushAdapter()
+        cross_device = CrossDeviceCoordinator(secret="postgres-test-secret", push=push, store=PostgresCrossDeviceStore(os.environ["TEST_DATABASE_URL"]))
+        challenge = cross_device.create_pairing(session_id)
+        device = cross_device.redeem(PairingRedeem(code=challenge.code, device_label="CI iPhone"))
+        subscription = cross_device.register(SubscriptionCreate(
+            device_id=device.device_id, device_token=device.device_token,
+            endpoint="https://push.example/subscription", p256dh="p" * 32, auth="a" * 16,
+        ))
+        assert cross_device.notify(session_id, live_claim.public_id, "CI verdict") == 1
+        assert cross_device.notify(session_id, live_claim.public_id, "CI verdict") == 0
+        assert len(push.deliveries) == 1
+        cross_device.revoke(subscription.subscription_id, device.device_token)
+        assert repository.db.execute("SELECT active FROM push_subscriptions WHERE id=%s", (subscription.subscription_id,)).fetchone()[0] is False
     finally:
         repository.close()
 
