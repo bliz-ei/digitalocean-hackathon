@@ -53,7 +53,7 @@ VERITY_GRADIENT_AGENT_ENDPOINT=https://your-agent-endpoint
 VERITY_GRADIENT_AGENT_KEY=...
 ```
 
-`scripts/deploy.ps1` requires these values and release preflight fails unless `/readyz` reports `evidence: gradient`. The endpoint is configuration; the access key is rendered only into the ignored `.verity/app.yaml` deployment spec and is never committed.
+`scripts/deploy.ps1` requires these values, runs three live agent/KB smoke attempts, and release preflight fails unless `/readyz` reports `evidence: gradient`. Each smoke attempt must return verified support and counterevidence from at least two independent sources. The endpoint is configuration; the access key is rendered only into the ignored `.verity/app.yaml` deployment spec and is never committed.
 
 ## Verification
 

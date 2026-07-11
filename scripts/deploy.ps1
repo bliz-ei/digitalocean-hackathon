@@ -51,6 +51,7 @@ $env:VERITY_STT_API_KEY = $SttApiKey
 $env:VERITY_GRADIENT_AGENT_ENDPOINT = $GradientAgentEndpoint
 $env:VERITY_GRADIENT_AGENT_KEY = $GradientAgentKey
 node scripts/run-python.mjs scripts/prepare_deploy.py
+node scripts/run-python.mjs scripts/smoke_gradient.py
 
 $spec = Join-Path $stateDir "app.yaml"
 $doctl = @("--access-token", $AccessToken, "apps")
