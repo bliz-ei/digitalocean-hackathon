@@ -1,0 +1,117 @@
+# DigitalOcean App Platform spec (canonical location).
+#
+# App Platform reads this file when an app is created from this Git repository and
+# uses it INSTEAD of autodetecting components. Without it, autodetection scans the
+# monorepo, matches the `packages/*` workspaces to the DigitalOcean Functions layout
+# (`packages/<package>/<function>`), and fabricates a Functions component with the
+# unsupported `typescript:default` runtime, which fails the build. Verity has no
+# serverless function: it is a FastAPI service, a pre-deploy migration job, a static
+# PWA, and a managed Postgres database — all declared below.
+#
+# This mirrors infra/app.yaml, which is the editable source used by
+# scripts/prepare_deploy.py + scripts/deploy.ps1 to render a secret-bearing spec for
+# `doctl apps create/update --spec`. Keep the two in sync; the `__..__` tokens below
+# are placeholders that the deploy script replaces with real secret values.
+name: verity
+region: sfo
+databases:
+  - name: db
+    engine: PG
+    version: "17"
+    production: false
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+ingress:
+  rules:
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /v1
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /healthz
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /readyz
+    - component:
+        name: pwa
+      match:
+        path:
+          prefix: /
+services:
+  - name: api
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile.api
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /readyz
+    envs:
+      - key: VERITY_REPOSITORY
+        value: postgres
+      - key: VERITY_DATABASE_URL
+        value: ${db.DATABASE_URL}
+        scope: RUN_TIME
+      - key: VERITY_ALLOWED_ORIGINS
+        value: ${APP_URL}
+        scope: RUN_TIME
+      - key: VERITY_PAIRING_SECRET
+        value: "__VERITY_PAIRING_SECRET__"
+        scope: RUN_TIME
+        type: SECRET
+      - key: VAPID_PUBLIC_KEY
+        value: "__VAPID_PUBLIC_KEY__"
+        scope: RUN_TIME
+      - key: VAPID_PRIVATE_KEY
+        value: "__VAPID_PRIVATE_KEY__"
+        scope: RUN_TIME
+        type: SECRET
+      - key: VAPID_SUBJECT
+        value: "__VAPID_SUBJECT__"
+        scope: RUN_TIME
+      - key: VERITY_STT_API_KEY
+        value: "__VERITY_STT_API_KEY__"
+        scope: RUN_TIME
+        type: SECRET
+      - key: VERITY_STT_MODEL
+        value: nova-3
+        scope: RUN_TIME
+jobs:
+  - name: migrate
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile.api
+    kind: PRE_DEPLOY
+    run_command: python scripts/migrate.py
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: VERITY_DATABASE_URL
+        value: ${db.DATABASE_URL}
+        scope: RUN_TIME
+static_sites:
+  - name: pwa
+    github:
+      repo: bliz-ei/digitalocean-hackathon
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    build_command: npm ci && npm run build -w @verity/pwa
+    output_dir: apps/pwa/dist
+    catchall_document: index.html
+    envs:
+      - key: VITE_API_URL
+        value: ${APP_URL}
+        scope: BUILD_TIME

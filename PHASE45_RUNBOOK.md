@@ -27,6 +27,15 @@ edited migrations that have already been applied.
 
 1. Merge the release PRs to `main`, grant DigitalOcean's GitHub app access to this repository once,
    and install `doctl`.
+
+   Always deploy from the spec (`doctl apps create/update --spec`, which `deploy.ps1` runs against
+   the rendered `infra/app.yaml` / `.do/app.yaml`). Do **not** create the app through the control
+   panel's "from GitHub source" autodetection: it matches the `packages/*` workspaces to the
+   DigitalOcean Functions layout (`packages/<package>/<function>`) and adds a bogus Functions
+   component with the unsupported `typescript:default` runtime, which fails the build. Verity has no
+   serverless function. If an app already carries such a component, delete it (or recreate the app
+   from the spec) before redeploying.
+
 2. Set `DIGITALOCEAN_ACCESS_TOKEN`, then run:
    `./scripts/deploy.ps1 -VapidSubject mailto:<team-contact>`.
 3. Save the printed app ID as `VERITY_APP_ID`; rerunning the command then updates the same app.
