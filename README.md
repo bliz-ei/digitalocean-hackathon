@@ -6,6 +6,8 @@ Contract-first fixture walking skeleton with a FastAPI service, shared TypeScrip
 
 Requires Python 3.11+ and Node 20+.
 
+The npm verification commands are cross-platform. On Windows, create the environment with `python -m venv .venv` and use `.venv\Scripts\python.exe` wherever the examples below show `.venv/bin/python`.
+
 ```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[test]'
