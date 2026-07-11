@@ -8,7 +8,7 @@ from app.persistence.repository import PostgresRepository
 from app.domain.models import Claim, ClaimState, ClassificationResult, TranscriptSegment, utcnow
 from app.pipeline.hero import run_hero
 from app.pipeline.evidence import EvidencePipeline
-from app.providers.evidence import RecordedEvidenceProvider
+from app.providers.evidence import RecordedEvidenceProvider, SearchEvidenceCollector
 from app.providers.fakes import FakeProviders
 from app.cross_device import CrossDeviceCoordinator, FakePushAdapter, PairingRedeem, PostgresCrossDeviceStore, SubscriptionCreate
 
@@ -37,7 +37,7 @@ def test_postgres_persists_canonical_hero_claim():
         assert repository.create_claim(live_claim, result)
         assert not repository.create_claim(live_claim, result)
         evidence = RecordedEvidenceProvider()
-        completed = asyncio.run(EvidencePipeline(repository, evidence, evidence, evidence, lambda *_: _noop()).run(live_claim, result))
+        completed = asyncio.run(EvidencePipeline(repository, SearchEvidenceCollector(evidence, evidence), evidence, lambda *_: _noop()).run(live_claim, result))
         assert completed.state == ClaimState.COMPLETE
         assert repository.db.execute("SELECT count(*) FROM evidence WHERE claim_id=(SELECT id FROM claims WHERE public_id=%s)", (live_claim.public_id,)).fetchone()[0] == 3
         assert repository.db.execute("SELECT count(*) FROM notification_jobs WHERE public_id=%s", (live_claim.public_id,)).fetchone()[0] == 1

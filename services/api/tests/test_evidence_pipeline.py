@@ -4,7 +4,7 @@ from time import perf_counter
 from app.domain.models import Claim, ClaimState, ClassificationResult, VerdictDraft, utcnow
 from app.persistence.repository import MemoryRepository
 from app.pipeline.evidence import EvidencePipeline
-from app.providers.evidence import CachingSearchAdapter, RecordedEvidenceProvider
+from app.providers.evidence import CachingSearchAdapter, RecordedEvidenceProvider, SearchEvidenceCollector
 
 
 def base_claim(public_id: str = "claim-phase3") -> Claim:
@@ -41,7 +41,7 @@ def test_recorded_pipeline_completes_with_valid_independent_citations():
         repo.save_claim(claim)
         events = []
         provider = RecordedEvidenceProvider()
-        pipeline = EvidencePipeline(repo, provider, provider, provider, lambda kind, payload: capture(events, kind, payload))
+        pipeline = EvidencePipeline(repo, SearchEvidenceCollector(provider, provider), provider, lambda kind, payload: capture(events, kind, payload))
         completed = await pipeline.run(claim, classification())
         assert completed.state == ClaimState.COMPLETE
         assert completed.verdict and completed.verdict.label == "Misleading"
@@ -61,7 +61,7 @@ def test_one_source_fails_closed_without_synthesis():
         provider = RecordedEvidenceProvider()
         provider.data["search"]["neutral"] = []
         provider.data["search"]["counter"] = []
-        pipeline = EvidencePipeline(repo, provider, provider, provider, noop)
+        pipeline = EvidencePipeline(repo, SearchEvidenceCollector(provider, provider), provider, noop)
         completed = await pipeline.run(claim, classification())
         assert completed.state == ClaimState.INSUFFICIENT_EVIDENCE
         assert completed.verdict and completed.verdict.label == "Insufficient evidence"
@@ -76,7 +76,7 @@ def test_client_draft_gets_one_retry_then_fails_closed():
         repo.save_claim(claim)
         events = []
         provider = RecordedEvidenceProvider()
-        pipeline = EvidencePipeline(repo, provider, provider, None, lambda kind, payload: capture(events, kind, payload))
+        pipeline = EvidencePipeline(repo, SearchEvidenceCollector(provider, provider), None, lambda kind, payload: capture(events, kind, payload))
         pending = await pipeline.run(claim, classification())
         assert pending.state == ClaimState.SYNTHESIZING
         invalid = VerdictDraft(
@@ -105,7 +105,7 @@ def test_three_recorded_hero_runs_finish_inside_phase_budget():
             claim = base_claim(f"claim-performance-{index}")
             repo.save_claim(claim)
             provider = RecordedEvidenceProvider()
-            completed = await EvidencePipeline(repo, provider, provider, provider, noop).run(claim, classification())
+            completed = await EvidencePipeline(repo, SearchEvidenceCollector(provider, provider), provider, noop).run(claim, classification())
             assert completed.state == ClaimState.COMPLETE
         assert perf_counter() - started < 30
     asyncio.run(run())
