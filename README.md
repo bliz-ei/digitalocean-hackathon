@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">Verity</h1>
 <p align="center">
-  Real-time, citation-verified fact-checking for YouTube — in your browser and on your phone.
+  Real-time, citation-verified fact-checking for YouTube, in your browser and on your phone.
 </p>
 <p align="center">
   <a href="PHASE45_RUNBOOK.md">Runbook</a> ·
@@ -23,20 +23,20 @@ leaving the page or trusting an unaccountable AI summary.
 
 It solves:
 
-- **Unverifiable AI answers** — every verdict cites 2–3 sources whose excerpts are
+- **Unverifiable AI answers:** every verdict cites 2–3 sources whose excerpts are
   machine-verified against independently captured text before anything is shown.
-- **Fact-checks that arrive too late** — claims are detected and checked live from the
+- **Fact-checks that arrive too late:** claims are detected and checked live from the
   tab's audio, and the verdict lands as a video overlay plus an iPhone notification.
-- **Demos that die on stage** — every AI stage has a disclosed recorded fallback, so the
+- **Demos that die on stage:** every AI stage has a disclosed recorded fallback, so the
   pipeline completes end to end with zero credentials and degrades gracefully when a
   provider fails.
 
 ## Key features
 
 - **Live claim detection:** tab audio streams to Deepgram; an LLM classifies sentences as
-  opinion, factual claim, or unverifiable — no truth-judging at this stage.
+  opinion, factual claim, or unverifiable; no truth-judging at this stage.
 - **Grounded evidence, not model memory:** one DigitalOcean Gradient agent retrieves
-  support *and* counterevidence — curated PDF knowledge base first, web-search tool as
+  support *and* counterevidence: curated PDF knowledge base first, web-search tool as
   controlled fallback. Excerpts that don't match the agent's own retrieval chunks (or an
   SSRF-guarded page re-fetch) are dropped.
 - **Deterministic verdict validation:** drafts must cite known evidence IDs from ≥2
@@ -70,7 +70,7 @@ show `.venv/bin/python`.
 ### Configure
 
 The fixture demo needs only the local database. Live providers are optional and
-independent — each stage falls back to its disclosed recorded fixture when unset:
+independent: each stage falls back to its disclosed recorded fixture when unset.
 
 | Stage | Enable with | Fallback |
 |---|---|---|
@@ -94,7 +94,7 @@ VERITY_REPOSITORY=postgres .venv/bin/python -m uvicorn app.main:app --app-dir se
 npm run dev -w @verity/pwa        # second terminal
 ```
 
-Open `http://localhost:5173` and choose **Start fixture demo** — nothing starts without
+Open `http://localhost:5173` and choose **Start fixture demo**: nothing starts without
 that explicit action. For live mode, build the extension (`npm run build -w
 @verity/extension`), load `apps/extension/dist` unpacked at `chrome://extensions`, open a
 YouTube video, and choose **Start live listening**. Check `http://localhost:8000/readyz`
@@ -114,9 +114,9 @@ YouTube tab audio
 ```
 
 Two principles organize the codebase. First, **every AI stage sits behind a `Protocol`
-seam** with an env-var factory, a real adapter, and a recorded fallback — swapping a
+seam** with an env-var factory, a real adapter, and a recorded fallback, so swapping a
 provider never touches the pipeline. Second, **models propose, deterministic code
-disposes** — all model output is validated against independently captured text before it
+disposes**: all model output is validated against independently captured text before it
 can reach a user. For detailed architecture and phase history, see the
 [`verity_*plan.md`](verity_gradient_evidence_plan.md) documents.
 
@@ -137,7 +137,7 @@ phase0/              Early feasibility probes (historical)
 ## Development
 
 ```sh
-.venv/bin/python -m pytest      # backend suite — no network, fakes throughout
+.venv/bin/python -m pytest      # backend suite, no network, fakes throughout
 npm test                        # workspace unit tests
 npm run typecheck
 npm run build
@@ -161,7 +161,7 @@ export VERITY_GRADIENT_AGENT_ENDPOINT=https://<agent-id>.agents.do-ai.run VERITY
 pwsh ./scripts/deploy.ps1 -VapidSubject mailto:<team-contact>
 ```
 
-Keep the API at **one instance** — WebSocket session state is process-local. For the full
+Keep the API at **one instance**: WebSocket session state is process-local. For the full
 input list, demo rehearsal protocol, and secret-handling rules, see
 [PHASE45_RUNBOOK.md](PHASE45_RUNBOOK.md).
 
@@ -178,7 +178,7 @@ input list, demo rehearsal protocol, and secret-handling rules, see
 
 ## Project status
 
-**Active development** — a DigitalOcean hackathon project built for a live demo. The
+**Active development.** A DigitalOcean hackathon project built for a live demo. The
 fixture path is deterministic and CI-covered; live providers are demo-hardened with
 automatic fallbacks, not production-scale.
 
