@@ -7,6 +7,7 @@
 - `VERITY_PAIRING_SECRET`: at least 32 random characters.
 - `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: one matching Web Push key pair.
 - `VAPID_SUBJECT`: a `mailto:` or HTTPS contact.
+- `VERITY_STT_API_KEY`: optional Deepgram key for live STT; `VERITY_STT_MODEL` overrides `nova-3`.
 
 The App Platform spec binds the public app URL into both `VITE_API_URL` and
 `VERITY_ALLOWED_ORIGINS`. Its pre-deploy job applies each migration exactly once and rejects

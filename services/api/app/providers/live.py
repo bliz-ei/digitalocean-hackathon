@@ -1,7 +1,9 @@
 import asyncio
 import json
 import os
+from contextlib import suppress
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -55,6 +57,88 @@ class RecordedSttAdapter:
     async def connect(self, session_id: str, emit: TranscriptSink) -> RecordedSttSession:
         data = json.loads(self.fixture.read_text())
         return RecordedSttSession(data["events"], emit)
+
+
+class DeepgramSttSession:
+    def __init__(self, socket, emit: TranscriptSink):
+        self._socket = socket
+        self._emit = emit
+        self._speakers = SpeakerMapper()
+        self._count = 0
+        self._receiver = asyncio.create_task(self._receive())
+
+    async def send(self, chunk: bytes, sequence: int) -> None:
+        if not chunk:
+            raise ValueError("audio chunk cannot be empty")
+        try:
+            await self._socket.send(chunk)
+        except Exception as error:
+            raise ValueError("stt_unavailable") from error
+
+    async def close(self) -> None:
+        with suppress(Exception):
+            await self._socket.send('{"type": "CloseStream"}')
+            await asyncio.wait_for(self._receiver, timeout=5)
+        with suppress(Exception):
+            await self._socket.close()
+        self._receiver.cancel()
+
+    async def _receive(self) -> None:
+        with suppress(Exception):
+            async for message in self._socket:
+                if isinstance(message, (bytes, bytearray)):
+                    continue
+                data = json.loads(message)
+                if data.get("type") != "Results" or not data.get("is_final"):
+                    continue
+                alternative = ((data.get("channel") or {}).get("alternatives") or [{}])[0]
+                text = normalize_text(str(alternative.get("transcript") or ""))
+                if not text:
+                    continue
+                words = alternative.get("words") or [{}]
+                start_ms = round(float(data.get("start") or 0) * 1000)
+                self._count += 1
+                await self._emit(
+                    TranscriptSegment(
+                        segment_id=f"dg-{self._count}",
+                        speaker=self._speaker(str(words[0].get("speaker", 0))),
+                        text=text,
+                        start_ms=start_ms,
+                        end_ms=start_ms + round(float(data.get("duration") or 0) * 1000),
+                    )
+                )
+
+    def _speaker(self, label: str) -> str:
+        # The transcript schema is two-speaker; extra diarized voices fold into A.
+        try:
+            return self._speakers.map(label)
+        except ValueError:
+            return "A"
+
+
+class DeepgramSttAdapter:
+    """Streams containerized tab audio to Deepgram live transcription."""
+
+    name = "deepgram"
+
+    def __init__(self, api_key: str, model: str = "nova-3", connector=None):
+        self.api_key = api_key
+        self.model = model
+        self.connector = connector
+
+    async def connect(self, session_id: str, emit: TranscriptSink) -> DeepgramSttSession:
+        connector = self.connector
+        if connector is None:
+            from websockets.asyncio.client import connect as connector
+        query = urlencode({"model": self.model, "smart_format": "true", "diarize": "true"})
+        try:
+            socket = await connector(
+                f"wss://api.deepgram.com/v1/listen?{query}",
+                additional_headers={"authorization": f"Token {self.api_key}"},
+            )
+        except Exception as error:
+            raise ValueError("stt_unavailable") from error
+        return DeepgramSttSession(socket, emit)
 
 
 class ProviderEventNormalizer:
@@ -169,6 +253,13 @@ class OpenAICompatibleFastClassifier:
                     continue
                 raise ValueError("provider_unavailable") from error
         raise ValueError("provider_unavailable")
+
+
+def configured_stt() -> SttAdapter:
+    api_key = os.getenv("VERITY_STT_API_KEY")
+    if api_key:
+        return DeepgramSttAdapter(api_key, os.getenv("VERITY_STT_MODEL", "nova-3"))
+    return RecordedSttAdapter()
 
 
 def configured_fast_classifier() -> FastClassifier:
