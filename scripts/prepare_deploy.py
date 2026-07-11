@@ -27,6 +27,7 @@ values = {
     "__VERITY_GRADIENT_SUPPORT_KEY__": support_key,
     "__VERITY_GRADIENT_COUNTER_ENDPOINT__": counter_endpoint,
     "__VERITY_GRADIENT_COUNTER_KEY__": counter_key,
+    "__VERITY_ALLOWED_ORIGINS__": os.getenv("VERITY_ALLOWED_ORIGINS", "${APP_URL}"),
 }
 missing = [token.strip("_") for token, value in values.items() if not value]
 if missing:

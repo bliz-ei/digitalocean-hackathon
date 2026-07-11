@@ -1,1 +1,176 @@
-:root{font-family:Inter,system-ui,sans-serif;color:#17211b;background:#f2f7f2;--accent:#145c3d;--line:#bed1c4;--muted:#526158}.verity-card{box-sizing:border-box;max-width:720px;margin:1rem auto;padding:1.25rem;border:1px solid var(--line);border-radius:16px;background:#fff;color:#17211b;box-shadow:0 8px 30px #183c2920}.verity-card h1{margin:.25rem 0;color:var(--accent);font-size:1.65rem}.verity-card h2{margin:1rem 0 .35rem;font-size:1rem}.verity-card blockquote{margin:.6rem 0;padding:.7rem .85rem;border-left:3px solid var(--accent);background:#f6f9f6}.verity-card a{color:#075aa5;font-weight:650}.verity-header{border-bottom:1px solid #dce7df;padding-bottom:.75rem}.interpretation{padding:.1rem .85rem;border-radius:10px;background:#edf6f0}.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.trust-grid>div{padding:0 .8rem;border:1px solid #dce7df;border-radius:10px}.source-list{padding-left:1.4rem}.source-list li{margin:1rem 0}.source-list blockquote{font-size:.94rem}.source-meta{margin:.2rem 0;color:var(--muted);font-size:.86rem}.stance{display:inline-block;margin-right:.45rem;padding:.1rem .45rem;border:1px solid #809b88;border-radius:999px;font-size:.72rem;text-transform:uppercase}.common-ground{padding:.1rem .8rem;border:1px solid #8bb69a;border-radius:10px}.state-insufficient_evidence h1,.state-failed h1{color:#812a22}@media(max-width:600px){.verity-card{margin:.5rem;padding:1rem;border-radius:12px}.trust-grid{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+/* Verity design tokens — "Verity Glass" v2 (light mode + frosted glass). Every value
+   here is the single source of truth. Token NAMES are unchanged from v1 so component CSS
+   keys stay stable; VALUES are the v2 light remap per DESIGN.md.
+   Declared on both :root (page context) and :host (Shadow DOM overlay). */
+:root,
+:host {
+  /* ---- Color: brand & primary (dark ink pill CTA — the only deep-ink surfaces) ---- */
+  --color-primary: #0b0c0e;
+  --color-primary-pressed: #26282b;
+  --color-on-primary: #ffffff;
+
+  /* ---- Color: surface ladder (light) ---- */
+  --color-canvas: #fbfbfc;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f4f5f7;
+  --color-surface-card: #eef0f2;
+  --color-button-fg: #e9ebee;
+
+  /* ---- Color: hairlines (ink-alpha on light) ---- */
+  --color-hairline: rgba(9, 10, 12, 0.08);
+  --color-hairline-soft: rgba(9, 10, 12, 0.05);
+  --color-hairline-strong: rgba(9, 10, 12, 0.16);
+
+  /* ---- Color: text (ink on light) ---- */
+  --color-ink: #0b0c0e;
+  --color-body: #3f4247;
+  --color-charcoal: #26282b;
+  --color-mute: #6f7377;
+  --color-ash: #9a9da1;
+  --color-stone: #c3c6c9;
+  /* on-dark: renamed meaning — primary interactive text on light chrome (labels, active tabs, links). */
+  --color-on-dark: #0b0c0e;
+  --color-on-dark-mute: rgba(11, 12, 14, 0.66);
+
+  /* ---- Color: glass tier (floating surfaces only) ---- */
+  --color-glass-bg: rgba(255, 255, 255, 0.66);
+  --color-glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --color-glass-border: rgba(255, 255, 255, 0.55);
+
+  /* ---- Shadows (glass/floating panels ONLY — flat cards stay shadowless) ---- */
+  --shadow-float: 0 12px 40px rgba(9, 10, 12, 0.1);
+  --shadow-soft: 0 2px 12px rgba(9, 10, 12, 0.06);
+
+  /* ---- Color: semantic accents (chips/illustrations only — text values deepened for AA
+     4.5:1 on the tinted soft backgrounds across white/canvas/surface-elevated/surface-card) ---- */
+  --color-accent-blue: #0a69ab;
+  --color-accent-blue-soft: rgba(87, 193, 255, 0.18);
+  --color-accent-red: #b33232;
+  --color-accent-red-soft: rgba(255, 97, 97, 0.16);
+  --color-accent-green: #0c7543;
+  --color-accent-green-soft: rgba(89, 212, 153, 0.18);
+  --color-accent-yellow: #915c00;
+  --color-accent-yellow-soft: rgba(255, 197, 51, 0.22);
+
+  /* ---- Color: brand gradients & ambient washes ---- */
+  --color-hero-stripe-start: #ff5757;
+  --color-hero-stripe-end: #a1131a;
+  --color-key-bg-start: #f7f8fa;
+  --color-key-bg-end: #eceef1;
+
+  /* Hero wash — soft red-coral atmospheric gradient (aside-style diffuse) over light base.
+     Dominant use once per page in the hero band; faint echo allowed in the closing CTA band. */
+  --wash-hero:
+    radial-gradient(ellipse 78% 62% at 50% -6%, rgba(255, 87, 87, 0.18), rgba(255, 87, 87, 0) 62%),
+    radial-gradient(ellipse 56% 48% at 82% 10%, rgba(161, 19, 26, 0.12), rgba(161, 19, 26, 0) 68%),
+    radial-gradient(ellipse 60% 50% at 12% 4%, rgba(255, 87, 87, 0.1), rgba(255, 87, 87, 0) 66%);
+  --wash-hero-echo:
+    radial-gradient(ellipse 80% 70% at 50% 120%, rgba(255, 87, 87, 0.1), rgba(255, 87, 87, 0) 64%),
+    radial-gradient(ellipse 50% 46% at 78% 108%, rgba(161, 19, 26, 0.07), rgba(161, 19, 26, 0) 70%);
+
+  /* ---- Spacing (base 8px, tight 2/4/12) ---- */
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-section: 96px;
+
+  /* ---- Radii ---- */
+  --rounded-none: 0px;
+  --rounded-xs: 4px;
+  --rounded-sm: 6px;
+  --rounded-md: 8px;
+  --rounded-lg: 10px;
+  --rounded-xl: 16px;
+  --rounded-full: 9999px;
+
+  /* ---- Typography: family & features ---- */
+  --font-sans: "Inter", "Inter Fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-feature-body: "calt", "kern", "liga", "ss03";
+  --font-feature-display: "calt", "kern", "ss02", "ss03", "ss08", "liga" 0;
+
+  /* ---- Typography: weights ---- */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ---- Typography: hierarchy (size / weight / line-height / tracking) ---- */
+  --type-display-xl-size: 64px;
+  --type-display-xl-weight: 600;
+  --type-display-xl-line: 1.1;
+  --type-display-xl-tracking: 0;
+
+  --type-display-lg-size: 56px;
+  --type-display-lg-weight: 500;
+  --type-display-lg-line: 1.17;
+  --type-display-lg-tracking: 0.2px;
+
+  --type-heading-xl-size: 24px;
+  --type-heading-xl-weight: 500;
+  --type-heading-xl-line: 1.6;
+  --type-heading-xl-tracking: 0.2px;
+
+  --type-heading-lg-size: 22px;
+  --type-heading-lg-weight: 500;
+  --type-heading-lg-line: 1.15;
+  --type-heading-lg-tracking: 0;
+
+  --type-heading-md-size: 20px;
+  --type-heading-md-weight: 500;
+  --type-heading-md-line: 1.4;
+  --type-heading-md-tracking: 0.2px;
+
+  --type-heading-sm-size: 18px;
+  --type-heading-sm-weight: 500;
+  --type-heading-sm-line: 1.4;
+  --type-heading-sm-tracking: 0.2px;
+
+  --type-body-lg-size: 18px;
+  --type-body-lg-weight: 400;
+  --type-body-lg-line: 1.6;
+  --type-body-lg-tracking: 0;
+
+  --type-body-md-size: 16px;
+  --type-body-md-weight: 400;
+  --type-body-md-line: 1.6;
+  --type-body-md-tracking: 0;
+
+  --type-body-strong-size: 16px;
+  --type-body-strong-weight: 500;
+  --type-body-strong-line: 1.4;
+  --type-body-strong-tracking: 0.2px;
+
+  --type-body-sm-size: 14px;
+  --type-body-sm-weight: 400;
+  --type-body-sm-line: 1.6;
+  --type-body-sm-tracking: 0;
+
+  --type-body-sm-strong-size: 14px;
+  --type-body-sm-strong-weight: 500;
+  --type-body-sm-strong-line: 1.6;
+  --type-body-sm-strong-tracking: 0.2px;
+
+  --type-caption-md-size: 13px;
+  --type-caption-md-weight: 400;
+  --type-caption-md-line: 1.4;
+  --type-caption-md-tracking: 0.1px;
+
+  --type-caption-sm-size: 12px;
+  --type-caption-sm-weight: 400;
+  --type-caption-sm-line: 1.5;
+  --type-caption-sm-tracking: 0.4px;
+
+  --type-link-md-size: 16px;
+  --type-link-md-weight: 500;
+  --type-link-md-line: 1.4;
+  --type-link-md-tracking: 0.3px;
+
+  --type-button-md-size: 14px;
+  --type-button-md-weight: 500;
+  --type-button-md-line: 1.6;
+  --type-button-md-tracking: 0.2px;
+}

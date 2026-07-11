@@ -1,1 +1,17 @@
-{"name":"Verity","short_name":"Verity","description":"Evidence-backed context for factual claims","id":"/","start_url":"/","scope":"/","display":"standalone","background_color":"#f2f7f2","theme_color":"#145c3d","icons":[{"src":"/verity-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "name": "Verity",
+  "short_name": "Verity",
+  "description": "Evidence-backed verdicts, pushed to your phone.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfbfc",
+  "theme_color": "#fbfbfc",
+  "icons": [
+    { "src": "/icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

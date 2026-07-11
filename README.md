@@ -1,76 +1,199 @@
-# Verity MVP — through Phase 3
+<p align="center">
+  <img src="apps/pwa/public/verity-icon.svg" alt="Verity" width="96">
+</p>
+<h1 align="center">Verity</h1>
+<p align="center">
+  Real-time, citation-verified fact-checking for YouTube, in your browser and on your phone.
+</p>
+<p align="center">
+  <a href="PHASE45_RUNBOOK.md">Runbook</a> ·
+  <a href="verity_gradient_evidence_plan.md">Architecture plans</a> ·
+  <a href="https://github.com/bliz-ei/digitalocean-hackathon/issues">Issues</a>
+</p>
+<p align="center">
+  <a href="https://github.com/bliz-ei/digitalocean-hackathon/actions/workflows/ci.yml">
+    <img src="https://github.com/bliz-ei/digitalocean-hackathon/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+</p>
 
-Contract-first fixture walking skeleton with a FastAPI service, shared TypeScript contracts/UI, an installable PWA, and an MV3 extension shell.
+## Overview
 
-## Local fixture demo
+Verity helps viewers judge factual claims the moment they are spoken in a video, without
+leaving the page or trusting an unaccountable AI summary.
 
-Requires Python 3.11+ and Node 20+.
+It solves:
 
-The npm verification commands are cross-platform. On Windows, create the environment with `python -m venv .venv` and use `.venv\Scripts\python.exe` wherever the examples below show `.venv/bin/python`.
+- **Unverifiable AI answers:** every verdict cites 2–3 sources whose excerpts are
+  machine-verified against independently captured text before anything is shown.
+- **Fact-checks that arrive too late:** claims are detected and checked live from the
+  tab's audio, and the verdict lands as a video overlay plus an iPhone notification.
+- **Demos that die on stage:** every AI stage has a disclosed recorded fallback, so the
+  pipeline completes end to end with zero credentials and degrades gracefully when a
+  provider fails.
+
+## Key features
+
+- **Live claim detection:** tab audio streams to Deepgram; an LLM classifies sentences as
+  opinion, factual claim, or unverifiable; no truth-judging at this stage.
+- **Grounded evidence, not model memory:** two DigitalOcean Gradient agents retrieve
+  support and counterevidence in parallel: curated PDF knowledge base first, web-search
+  tool as controlled fallback. Excerpts that don't match the agent's own retrieval chunks
+  (or an SSRF-guarded page re-fetch) are dropped.
+- **Deterministic verdict validation:** drafts must cite known evidence IDs from ≥2
+  independent credible sources and pass label/confidence/support checks, or the claim
+  fails closed to *Insufficient evidence*.
+- **Cross-device delivery:** verdicts persist to PostgreSQL before an exactly-once Web
+  Push notification reaches a paired iPhone (6-digit pairing, installable PWA).
+- **Honest fallbacks:** `/readyz` reports the live provider per stage; fixture-mode claims
+  are flagged as such. Kill-switches force the deterministic path without unsetting keys.
+
+## Quick start
+
+### Prerequisites
+
+- Python 3.11+, Node 20+, Docker, Chrome 116+
+- No credentials needed for the fixture demo
+
+### Install
 
 ```sh
+git clone https://github.com/bliz-ei/digitalocean-hackathon.git
+cd digitalocean-hackathon
 python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[test]'
 npm install
+```
+
+On Windows use `python -m venv .venv` and `.venv\Scripts\python.exe` wherever the examples
+show `.venv/bin/python`.
+
+### Configure
+
+The fixture demo needs only the local database. Live providers are optional and
+independent: each stage falls back to its disclosed recorded fixture when unset.
+
+| Stage | Enable with | Fallback |
+|---|---|---|
+| STT | `VERITY_STT_API_KEY` (Deepgram) | recorded transcript |
+| Classifier | `VERITY_FAST_BASE_URL` / `_API_KEY` / `_MODEL` | recorded (hero claim only) |
+| Evidence | `VERITY_GRADIENT_SUPPORT_*` and `VERITY_GRADIENT_COUNTER_*` (legacy single `VERITY_GRADIENT_AGENT_*` works for both roles) | recorded evidence |
+| Reasoner | `VERITY_REASONING_BASE_URL` / `_API_KEY` / `_MODEL` | recorded drafts |
+| Push | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | notifications no-op |
+
+Gradient serverless inference (`https://inference.do-ai.run`) serves both model stages
+with one key. Kill-switches: `VERITY_STT=recorded`, `VERITY_EVIDENCE=recorded`. The
+evidence agents' knowledge base is described by [fixtures/gradient-kb.json](fixtures/gradient-kb.json).
+
+### Run
+
+```sh
 docker compose up -d --wait postgres
-VERITY_DATABASE_URL=postgresql://verity:verity@localhost:54329/verity .venv/bin/python scripts/migrate.py
-uvicorn app.main:app --app-dir services/api --reload
-npm run dev -w @verity/pwa
+export VERITY_DATABASE_URL=postgresql://verity:verity@localhost:54329/verity
+.venv/bin/python scripts/migrate.py
+VERITY_REPOSITORY=postgres .venv/bin/python -m uvicorn app.main:app --app-dir services/api --reload
+npm run dev -w @verity/pwa        # second terminal
 ```
 
-Open `http://localhost:5173` and choose **Start fixture demo**. Nothing starts automatically: that explicit action creates a session, runs only the checked-in fake providers, persists the canonical claim, and opens `/claims/{public_id}`. The extension uses the same explicit action in its popup; build it with `npm run build -w @verity/extension` and load `apps/extension/dist` as an unpacked extension.
+Open `http://localhost:5173` and choose **Start fixture demo**: nothing starts without
+that explicit action. For live mode, build the extension (`npm run build -w
+@verity/extension`), load `apps/extension/dist` unpacked at `chrome://extensions`, open a
+YouTube video, and choose **Start live listening**. Check `http://localhost:8000/readyz`
+to see which provider serves each stage. Without `VERITY_REPOSITORY=postgres` the API
+runs on in-memory storage.
 
-No live credentials or network providers are used. Fixture mode does not accept or retain audio. Do not put credentials, raw provider responses, or private user data in fixtures or logs.
+## How it works
 
-## Phase 2 live transcript path
-
-Build and reload the unpacked extension, open a YouTube video, then choose **Start live listening**. The offscreen runtime preserves audible tab playback, sends bounded one-second WebM/Opus chunks with acknowledgements and short reconnect replay, and renders canonical final transcript/checking events in the overlay.
-
-The checked-in server uses the disclosed recorded STT/classifier adapters so CI and local demos need no credentials. A user-key classifier can be supplied through the extension-local `verityProvider` configuration (`baseUrl`, `apiKey`, and `model`); the key is used only by the offscreen provider request and is never sent to the Verity backend. The managed live STT adapter remains gated on a Phase 0 provider/device decision and must not be represented as verified until the three real-device hero runs pass.
-
-## Phase 3 evidence and verdict path
-
-Every live factual claim now runs bounded neutral/support/counter searches concurrently, validates URLs, extracts captured page text, clusters duplicate sources, applies stance-independent source tiers, and selects at most six evidence passages. The reasoning model sees only this immutable evidence bundle. Its draft is accepted only after deterministic citation ownership, excerpt, independence, label, confidence, and support checks; one invalid retry is allowed before the claim fails closed.
-
-Without provider configuration, the disclosed `phase3-evidence.json` search, page, and reasoning recordings run through the same validators. To use a compatible live server-side provider, set all of:
-
-```sh
-VERITY_SEARCH_URL=https://search.example/v1/search
-VERITY_SEARCH_API_KEY=...
-VERITY_REASONING_BASE_URL=https://provider.example
-VERITY_REASONING_API_KEY=...
-VERITY_REASONING_MODEL=...
+```text
+YouTube tab audio
+  → Chrome extension (MV3 offscreen capture, 1s WebM/Opus chunks over WebSocket)
+  → STT adapter (Deepgram | recorded)
+  → fast classifier (LLM): opinion / factual claim / unverifiable
+  → evidence collector (two Gradient agents: support + counter, PDF KB + web search | recorded)
+  → verdict synthesis (LLM) → deterministic validation (validate_draft)
+  → PostgreSQL → browser overlay + iPhone Web Push
 ```
 
-The search adapter accepts a compact `{results:[{title,url,publisher,published_at,snippet}]}` response. URLs and redirects to local, private, link-local, credentialed, unsupported-scheme, or unsupported-port destinations are rejected. API keys, full page text, complete prompts, authorization headers, and provider bodies are not logged. Extension BYOK reasoning uses the same `verityProvider` key directly from the offscreen context; only its structured verdict draft is returned to Verity.
+Two principles organize the codebase. First, **every AI stage sits behind a `Protocol`
+seam** with an env-var factory, a real adapter, and a recorded fallback, so swapping a
+provider never touches the pipeline. Second, **models propose, deterministic code
+disposes**: all model output is validated against independently captured text before it
+can reach a user. For detailed architecture and phase history, see the
+[`verity_*plan.md`](verity_gradient_evidence_plan.md) documents.
 
-## Live Gradient evidence
+## Repository structure
 
-Production uses two DigitalOcean Gradient agents (support and counterevidence) with the checked-in knowledge-base manifest and web-search fallback. Set all four server-side values before deployment:
-
-```sh
-VERITY_GRADIENT_SUPPORT_ENDPOINT=https://your-support-agent-endpoint
-VERITY_GRADIENT_SUPPORT_KEY=...
-VERITY_GRADIENT_COUNTER_ENDPOINT=https://your-counter-agent-endpoint
-VERITY_GRADIENT_COUNTER_KEY=...
+```text
+services/api/        FastAPI backend: domain logic, pipelines, provider adapters, persistence
+apps/extension/      MV3 Chrome extension: capture, transport, overlay, optional BYOK
+apps/pwa/            Installable React PWA: pairing, notifications, public claim pages
+packages/contracts/  Shared TypeScript types + deterministic OpenAPI export
+packages/ui/         Shared verdict/status components and tokens
+fixtures/            Hero-demo recordings and the Gradient knowledge-base manifest
+infra/ scripts/      App Platform spec, one-command deploy, migrate/preflight/smoke checks
+verity_*plan.md      Phase design documents
+phase0/              Early feasibility probes (historical)
 ```
 
-For a single shared agent during migration, legacy `VERITY_GRADIENT_AGENT_ENDPOINT` and `VERITY_GRADIENT_AGENT_KEY` are still accepted and apply to both roles.
-
-`scripts/deploy.ps1` requires complete support and counter agent settings (or the legacy pair), runs three live agent/KB smoke attempts, and release preflight fails unless `/readyz` reports `evidence: gradient`. Each smoke attempt must return verified support and counterevidence from at least two independent sources. Access keys are rendered only into the ignored `.verity/app.yaml` deployment spec and are never committed.
-
-## Verification
+## Development
 
 ```sh
-pytest
-npm run contracts:generate
-npm run contracts:check
-npm test
+.venv/bin/python -m pytest      # backend suite, no network, fakes throughout
+npm test                        # workspace unit tests
 npm run typecheck
 npm run build
-TEST_DATABASE_URL=postgresql://verity:verity@localhost:54329/verity .venv/bin/pytest services/api/tests/test_postgres.py
-npm run test:browser
-pytest phase0/tests
+npm run contracts:check         # fails if the committed OpenAPI export is stale
+npm run test:browser            # Playwright fixture flow
 ```
 
-`packages/contracts/openapi.json` is exported deterministically from FastAPI. Run `npm run contracts:generate` after a backend contract change; the check command fails when its committed output is stale.
+Run `npm run contracts:generate` after any backend contract change. The Postgres
+integration test runs with `TEST_DATABASE_URL=postgresql://verity:verity@localhost:54329/verity`.
+
+## Deployment
+
+One command deploys the API, PWA, database, and migrations to DigitalOcean App Platform,
+generates and reuses stable VAPID/pairing secrets under the gitignored `.verity/`
+directory, runs live Gradient smoke checks, and finishes with a release preflight that
+fails unless `/readyz` reports the real providers:
+
+```sh
+export DIGITALOCEAN_ACCESS_TOKEN=... VERITY_STT_API_KEY=...
+export VERITY_GRADIENT_SUPPORT_ENDPOINT=https://<support-agent>.agents.do-ai.run VERITY_GRADIENT_SUPPORT_KEY=...
+export VERITY_GRADIENT_COUNTER_ENDPOINT=https://<counter-agent>.agents.do-ai.run VERITY_GRADIENT_COUNTER_KEY=...
+pwsh ./scripts/deploy.ps1 -VapidSubject mailto:<team-contact>
+```
+
+Legacy `VERITY_GRADIENT_AGENT_ENDPOINT` / `VERITY_GRADIENT_AGENT_KEY` still apply to both
+roles when the split values are unset. Deploy runs three live agent/KB smoke attempts and
+release preflight fails unless `/readyz` reports `evidence: gradient`.
+
+Keep the API at **one instance**: WebSocket session state is process-local. For the full
+input list, demo rehearsal protocol, and secret-handling rules, see
+[PHASE45_RUNBOOK.md](PHASE45_RUNBOOK.md).
+
+## Security and privacy
+
+- Never commit secrets; deployment secrets render only into the gitignored `.verity/`.
+- Fixture mode accepts and retains no audio. BYOK keys stay in the extension and never
+  reach the Verity backend.
+- API keys, page text, prompts, authorization headers, and raw provider bodies are never
+  logged. Fetches and redirects to local, private, credentialed, or unusual-port
+  destinations are rejected.
+- Report vulnerabilities privately via
+  [GitHub security advisories](https://github.com/bliz-ei/digitalocean-hackathon/security/advisories).
+
+## Project status
+
+**Active development.** A DigitalOcean hackathon project built for a live demo. The
+fixture path is deterministic and CI-covered; live providers are demo-hardened with
+automatic fallbacks, not production-scale.
+
+## Contributing
+
+Team workflow: branch from `main`, keep changes behind the existing provider seams, run
+the Development commands above, and open a pull request. Bugs and questions go to
+[Issues](https://github.com/bliz-ei/digitalocean-hackathon/issues).
+
+## License
+
+No open-source license has been granted; all rights reserved by the team. (Add a LICENSE
+file before any public release.)

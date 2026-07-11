@@ -6,9 +6,9 @@ test("explicit fixture action opens the canonical PWA verdict", async ({ page })
   await page.getByRole("button", { name: "Start fixture demo" }).click();
 
   await expect(page).toHaveURL(/\/claims\/hero-ev-lifecycle-2026$/);
-  await expect(page.getByRole("heading", { name: "Misleading" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sources" })).toBeVisible();
-  await expect(page.locator("article li")).toHaveCount(3);
+  await expect(page.getByText("Misleading")).toBeVisible();
+  await expect(page.getByText(/Evidence · 3 sources/)).toBeVisible();
+  await expect(page.locator(".vy-citation")).toHaveCount(3);
 });
 
 test("iPhone PWA metadata and one-time pairing work against the API", async ({ page, request }) => {
@@ -16,7 +16,7 @@ test("iPhone PWA metadata and one-time pairing work against the API", async ({ p
   expect(manifest.ok()).toBeTruthy();
   const metadata = await manifest.json();
   expect(metadata.display).toBe("standalone");
-  expect(metadata.icons).toHaveLength(1);
+  expect(metadata.icons).toHaveLength(3);
 
   const sessionResponse = await request.post("http://127.0.0.1:8000/v1/sessions", {
     data: { idempotency_key: `browser-pair-${Date.now()}`, fixture_mode: true },
@@ -57,7 +57,7 @@ test("the production MV3 bundle loads as an unpacked extension", async ({}, test
     const popup = await context.newPage();
     await popup.goto(new URL("popup.html", worker.url()).href);
     await expect(popup.getByRole("button", { name: "Start live listening" })).toBeVisible();
-    await expect(popup.getByRole("button", { name: "Demo fallback" })).toBeVisible();
+    await expect(popup.getByRole("button", { name: "Run disclosed fixture demo" })).toBeVisible();
   } finally {
     await context.close();
   }

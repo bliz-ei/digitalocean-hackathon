@@ -1,0 +1,70 @@
+/* Verity base layer — light canvas defaults, Inter with ss03, focus + reduced-motion.
+   Depth is the surface ladder + hairlines; shadows exist ONLY on floating/glass panels. */
+
+.vy-root,
+:host {
+  color: var(--color-body);
+  background: var(--color-canvas);
+  font-family: var(--font-sans);
+  font-size: var(--type-body-md-size);
+  line-height: var(--type-body-md-line);
+  font-feature-settings: var(--font-feature-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Box model + typographic reset scoped to Verity surfaces so we never leak into a host page. */
+.vy-root *,
+.vy-root *::before,
+.vy-root *::after {
+  box-sizing: border-box;
+}
+
+.vy-root :where(h1, h2, h3, h4, p, ol, ul, blockquote, figure) {
+  margin: 0;
+}
+
+.vy-root :where(ol, ul) {
+  padding: 0;
+  list-style: none;
+}
+
+.vy-root :where(a) {
+  color: var(--color-on-dark);
+  text-decoration: none;
+}
+
+.vy-root :where(a):focus-visible {
+  text-decoration: underline;
+}
+
+/* Focus: brighten the hairline, never a colored ring. */
+.vy-root :where(a, button, input, [tabindex]):focus-visible {
+  outline: 1px solid var(--color-hairline-strong);
+  outline-offset: 2px;
+}
+
+/* Typography helpers — each maps a hierarchy row to its four tokens. */
+.vy-display-xl { font-size: var(--type-display-xl-size); font-weight: var(--type-display-xl-weight); line-height: var(--type-display-xl-line); letter-spacing: var(--type-display-xl-tracking); font-feature-settings: var(--font-feature-display); color: var(--color-ink); }
+.vy-display-lg { font-size: var(--type-display-lg-size); font-weight: var(--type-display-lg-weight); line-height: var(--type-display-lg-line); letter-spacing: var(--type-display-lg-tracking); color: var(--color-ink); }
+.vy-heading-xl { font-size: var(--type-heading-xl-size); font-weight: var(--type-heading-xl-weight); line-height: var(--type-heading-xl-line); letter-spacing: var(--type-heading-xl-tracking); color: var(--color-ink); }
+.vy-heading-lg { font-size: var(--type-heading-lg-size); font-weight: var(--type-heading-lg-weight); line-height: var(--type-heading-lg-line); letter-spacing: var(--type-heading-lg-tracking); color: var(--color-ink); }
+.vy-heading-md { font-size: var(--type-heading-md-size); font-weight: var(--type-heading-md-weight); line-height: var(--type-heading-md-line); letter-spacing: var(--type-heading-md-tracking); color: var(--color-ink); }
+.vy-heading-sm { font-size: var(--type-heading-sm-size); font-weight: var(--type-heading-sm-weight); line-height: var(--type-heading-sm-line); letter-spacing: var(--type-heading-sm-tracking); color: var(--color-ink); }
+.vy-body-lg { font-size: var(--type-body-lg-size); font-weight: var(--type-body-lg-weight); line-height: var(--type-body-lg-line); letter-spacing: var(--type-body-lg-tracking); }
+.vy-body-md { font-size: var(--type-body-md-size); font-weight: var(--type-body-md-weight); line-height: var(--type-body-md-line); letter-spacing: var(--type-body-md-tracking); }
+.vy-body-strong { font-size: var(--type-body-strong-size); font-weight: var(--type-body-strong-weight); line-height: var(--type-body-strong-line); letter-spacing: var(--type-body-strong-tracking); }
+.vy-body-sm { font-size: var(--type-body-sm-size); font-weight: var(--type-body-sm-weight); line-height: var(--type-body-sm-line); letter-spacing: var(--type-body-sm-tracking); }
+.vy-body-sm-strong { font-size: var(--type-body-sm-strong-size); font-weight: var(--type-body-sm-strong-weight); line-height: var(--type-body-sm-strong-line); letter-spacing: var(--type-body-sm-strong-tracking); }
+.vy-caption-md { font-size: var(--type-caption-md-size); font-weight: var(--type-caption-md-weight); line-height: var(--type-caption-md-line); letter-spacing: var(--type-caption-md-tracking); color: var(--color-mute); }
+.vy-caption-sm { font-size: var(--type-caption-sm-size); font-weight: var(--type-caption-sm-weight); line-height: var(--type-caption-sm-line); letter-spacing: var(--type-caption-sm-tracking); color: var(--color-mute); }
+
+@media (prefers-reduced-motion: reduce) {
+  .vy-root *,
+  :host * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
