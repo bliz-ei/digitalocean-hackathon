@@ -25,7 +25,8 @@ def test_pairing_is_single_use_and_expiring():
         service.redeem(PairingRedeem(code=challenge.code))
 
     expired = service.create_pairing("session-2")
-    service.challenges[expired.challenge_id].expires_at = now() - timedelta(seconds=1)
+    assert service.memory_store is not None
+    service.memory_store.challenges[expired.challenge_id].expires_at = now() - timedelta(seconds=1)
     with pytest.raises(ValueError, match="expired"):
         service.redeem(PairingRedeem(code=expired.code))
 

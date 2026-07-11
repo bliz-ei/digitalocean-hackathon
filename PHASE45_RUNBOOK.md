@@ -36,7 +36,6 @@ Run migrations through `003_cross_device.sql`, deploy one API instance, then ver
 
 ## Explicit limitations
 
-- Phase 3 is not on `main`; the live pipeline currently stops at `CHECKING`. Fixture completion exercises the notification hook today.
-- Pairing/push coordinator state is in-process until the repository adapter is switched to the migration-backed tables. A restart invalidates active pairings in this branch.
+- Live mode still uses the disclosed recorded STT adapter until Phase 0 selects a managed provider for the hero devices.
 - Real iPhone delivery requires HTTPS, a Home Screen PWA, valid VAPID keys, and a real-device rehearsal.
 - BYOK keys use local extension storage as a prototype safeguard, not production encrypted custody.
