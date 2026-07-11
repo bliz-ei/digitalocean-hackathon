@@ -49,7 +49,7 @@ services:
         value: ${db.DATABASE_URL}
         scope: RUN_TIME
       - key: VERITY_ALLOWED_ORIGINS
-        value: ${APP_URL}
+        value: "__VERITY_ALLOWED_ORIGINS__"
         scope: RUN_TIME
       - key: VERITY_PAIRING_SECRET
         value: "__VERITY_PAIRING_SECRET__"
